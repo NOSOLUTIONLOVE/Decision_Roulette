@@ -80,6 +80,7 @@ export class WheelRenderer {
     const sectorAngle = (Math.PI * 2) / n;
     // 字号按 canvas 尺寸缩放：280px 轮盘用基数，更大轮盘等比放大
     const fontSize = Math.round(TEXT_SIZE_BASE[config.textSize] * (size / 280));
+    const drawLabels = config.drawLabels !== false;
 
     // Draw each sector
     options.forEach((option, i) => {
@@ -107,52 +108,48 @@ export class WheelRenderer {
       ctx.stroke();
     });
 
-    // Draw text — 切向 T 形布局：文字垂直于半径方向（切线方向）排列，
-    // 从文字中点出发的垂线穿过圆心，形成 T 字形。
-    // 下半圆文字翻转 180° 保持正立可读。
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    // Draw text — 仅在 drawLabels 为 true 时绘制；WheelStage 已用 DOM 覆盖时设为 false，
+    // 避免 canvas 文字与 DOM 文字重叠，同时让文字不受 canvas 旋转影响而始终正立。
+    if (drawLabels) {
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
 
-    options.forEach((option, i) => {
-      const sectorCenter = i * sectorAngle - Math.PI / 2 + angle + sectorAngle / 2;
+      options.forEach((option, i) => {
+        const sectorCenter = i * sectorAngle - Math.PI / 2 + angle + sectorAngle / 2;
 
-      // Skip text if sector too small (< 7.2 degrees = 50 options)
-      if (sectorAngle < (Math.PI * 2) / 50) return;
+        // Skip text if sector too small (< 7.2 degrees = 50 options)
+        if (sectorAngle < (Math.PI * 2) / 50) return;
 
-      ctx.save();
-      ctx.translate(cx, cy);
+        ctx.save();
+        ctx.translate(cx, cy);
 
-      // Normalize angle to [0, 2PI) for bottom-half detection
-      const normAngle = ((sectorCenter % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-      // 下半圆（PI/2 ~ 3PI/2）文字需要翻转 180° 才能保持正立可读
-      const isBottomHalf = normAngle > Math.PI / 2 && normAngle < (3 * Math.PI) / 2;
-
-      // 自适应字号：扇区越多字号越小，上限为基准字号
-      const adjFontSize = Math.min(fontSize, sectorAngle * radius * 0.7);
-      const textRadius = radius * 0.62;
-      const maxWidth = sectorAngle * textRadius * 0.85;
-      const text = this.truncateText(option.text, maxWidth, adjFontSize);
-
-      ctx.font = `italic ${adjFontSize}px "Inter", "Noto Sans SC", sans-serif`;
-      ctx.fillStyle = '#FAF9F5';
-      ctx.shadowColor = 'rgba(40, 38, 27, 0.5)';
-      ctx.shadowBlur = 2;
-      ctx.shadowOffsetY = 1;
-
-      if (isBottomHalf) {
-        // 下半圆：旋转 sectorCenter + 3PI/2 使文字切向正立，
-        // 在正 textRadius 处绘制（翻转后正方向 = 指向扇区中心）
-        ctx.rotate(sectorCenter + (3 * Math.PI) / 2);
-        ctx.fillText(text, 0, textRadius);
-      } else {
-        // 上半圆：旋转 sectorCenter + PI/2 使文字切向排列（垂直于半径）
-        // 在 -textRadius 处绘制（朝向扇区中心方向）
+        // 切向 T 形布局：文字垂直于半径方向（切线方向）排列。
+        // Canvas y-down：normAngle ∈ (0, π) 表示扇区在屏幕下半圆，需要翻转 180°
+        // 使文字顶部始终远离圆心，保持正立可读。使用归一化角度避免 sin(π) 浮点误差。
+        const normAngle = ((sectorCenter % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+        const isBottomHalf = normAngle > 0 && normAngle < Math.PI;
         ctx.rotate(sectorCenter + Math.PI / 2);
-        ctx.fillText(text, 0, -textRadius);
-      }
+        if (isBottomHalf) {
+          ctx.rotate(Math.PI);
+        }
 
-      ctx.restore();
-    });
+        // 自适应字号：扇区越多字号越小，上限为基准字号
+        const adjFontSize = Math.min(fontSize, sectorAngle * radius * 0.7);
+        const textRadius = radius * 0.62;
+        const maxWidth = sectorAngle * textRadius * 0.85;
+        const text = this.truncateText(option.text, maxWidth, adjFontSize);
+
+        ctx.font = `italic ${adjFontSize}px "Inter", "Noto Sans SC", sans-serif`;
+        ctx.fillStyle = '#FAF9F5';
+        ctx.shadowColor = 'rgba(40, 38, 27, 0.5)';
+        ctx.shadowBlur = 2;
+        ctx.shadowOffsetY = 1;
+
+        ctx.fillText(text, 0, -textRadius);
+
+        ctx.restore();
+      });
+    }
 
     // Inner dashed ring
     ctx.beginPath();

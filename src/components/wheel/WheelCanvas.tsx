@@ -10,12 +10,14 @@ import type { WheelConfig } from '@/types/engine';
 interface WheelCanvasProps {
   /** Ref to expose the canvas element for external rotation control */
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
+  /** 当前轮盘旋转角度（弧度），由父组件通过 CSS transform 应用 */
+  angle?: number;
 }
 
 /** Mobile default — kept identical to the legacy fixed size to avoid visual regression. */
 const DEFAULT_CSS_SIZE = 280;
 
-export function WheelCanvas({ canvasRef }: WheelCanvasProps) {
+export function WheelCanvas({ canvasRef, angle = 0 }: WheelCanvasProps) {
   const options = useWheelStore((s) => s.options);
   const result = useWheelStore((s) => s.result);
   const phase = useWheelStore((s) => s.phase);
@@ -64,20 +66,27 @@ export function WheelCanvas({ canvasRef }: WheelCanvasProps) {
       textSize,
       colors: theme.wheelColors,
       highlightSectorIndex: result ? result.optionIndex : null,
+      // DOM 文字覆盖层负责渲染扇区文字，canvas 只画扇区图形
+      drawLabels: false,
       emptyHint: t('wheel.canvasEmptyHint'),
       singleOptionHint: t('wheel.canvasSingleHint'),
     };
 
-    rendererRef.current.draw(options, config);
+    // 旋转由父组件通过 CSS transform 应用，canvas 内部用 0 绘制静态帧
+    rendererRef.current.draw(options, config, 0);
     ctx.restore();
   }, [options, textSize, themeId, result, canvasRef, cssSize, t]);
 
+  // phase 变化时需重绘：idle → charging 时 idle-spin 动画停止 + willChange 从 'transform' 变 'auto'，
+  // 浏览器丢弃合成层会丢失 canvas 位图内容，若不重绘会保持空白直到下一个 dep 变化。
   useEffect(() => {
     draw();
-  }, [draw]);
+  }, [draw, phase]);
 
-  // 仅在动画阶段启用 GPU 层提升，静止时释放以节省显存
-  const isAnimating = phase === 'accelerating' || phase === 'decelerating' || phase === 'idle';
+  // 在可能涉及旋转或需要保持 canvas 位图的阶段启用 GPU 层；
+  // result 阶段静止且无旋转，可以释放。特别地，charging 阶段必须保持
+  // will-change: transform，否则浏览器丢弃合成层会导致 canvas 位图丢失变白。
+  const isAnimating = phase !== 'result';
 
   // 主题切换后重绘：使用双层 rAF 确保下一帧 CSS 变量已生效，替代原 setTimeout hack
   useEffect(() => {
@@ -102,6 +111,7 @@ export function WheelCanvas({ canvasRef }: WheelCanvasProps) {
         style={{
           willChange: isAnimating ? 'transform' : 'auto',
           transformOrigin: 'center center',
+          transform: `rotateZ(${angle}rad)`,
         }}
       />
     </div>

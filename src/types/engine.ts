@@ -13,6 +13,8 @@ export interface WheelConfig {
   textSize: 'small' | 'medium' | 'large';
   colors: string[];
   highlightSectorIndex: number | null;
+  /** 是否绘制扇区文字；默认 true。DOM 覆盖场景可设为 false 避免重复渲染。 */
+  drawLabels?: boolean;
   /** 本地化提示文字：空选项时绘制在轮盘中央。未提供则跳过。 */
   emptyHint?: string;
   /** 本地化提示文字：仅有 1 个选项时绘制在轮盘中央。未提供则跳过。 */

@@ -64,6 +64,8 @@ function makeConfig(overrides: Partial<WheelConfig> = {}): WheelConfig {
     textSize: 'medium',
     colors: [],
     highlightSectorIndex: null,
+    // 默认关闭 canvas 文字绘制：DOM 覆盖层负责文字，renderer 测试聚焦扇区几何
+    drawLabels: false,
     // Default localized hints so assertions on fillText stay meaningful.
     emptyHint: '添加选项开始',
     singleOptionHint: '至少需要 2 个选项',
@@ -331,23 +333,23 @@ describe('WheelRenderer.draw（mock canvas）', () => {
   it('标签布局：n<=6 时调用 rotate（切向 T 形排列）', () => {
     const ctx = createMockContext()
     const renderer = new WheelRenderer(ctx, 300)
-    renderer.draw(makeOptions(6), makeConfig())
+    renderer.draw(makeOptions(6), makeConfig({ drawLabels: true }))
 
-    // 切向 T 形布局：每个扇区文本绘制都调用一次 rotate
+    // 切向 T 形布局：每个扇区至少一次 rotate；下半圆额外翻转 180° 再 rotate 一次
     expect(ctx.rotate).toHaveBeenCalled()
     const rotateCalls = (ctx.rotate as ReturnType<typeof vi.fn>).mock.calls
-    expect(rotateCalls.length).toBe(6)
+    expect(rotateCalls.length).toBeGreaterThanOrEqual(6)
   })
 
   it('标签布局：n>6 时调用 rotate（切向 T 形排列）', () => {
     const ctx = createMockContext()
     const renderer = new WheelRenderer(ctx, 300)
-    renderer.draw(makeOptions(8), makeConfig())
+    renderer.draw(makeOptions(8), makeConfig({ drawLabels: true }))
 
-    // 切向 T 形布局：每个扇区文本绘制都调用一次 rotate
+    // 切向 T 形布局：每个扇区至少一次 rotate；下半圆额外翻转 180° 再 rotate 一次
     expect(ctx.rotate).toHaveBeenCalled()
     const rotateCalls = (ctx.rotate as ReturnType<typeof vi.fn>).mock.calls
-    expect(rotateCalls.length).toBe(8)
+    expect(rotateCalls.length).toBeGreaterThanOrEqual(8)
   })
 
   it('highlightSectorIndex 命中时多一次 fill 调用（高亮覆盖）', () => {
@@ -397,13 +399,13 @@ describe('WheelRenderer.draw（mock canvas）', () => {
     // 300px canvas：small=12*(300/280)≈13, large=20*(300/280)≈21
     const ctxSmall = createMockContext()
     const r1 = new WheelRenderer(ctxSmall, 300)
-    r1.draw(makeOptions(4), makeConfig({ textSize: 'small' }))
+    r1.draw(makeOptions(4), makeConfig({ textSize: 'small', drawLabels: true }))
     // 字号基数 small=12，按 300/280 缩放后约 13px
     expect(ctxSmall.font).toContain('13px')
 
     const ctxLarge = createMockContext()
     const r2 = new WheelRenderer(ctxLarge, 300)
-    r2.draw(makeOptions(4), makeConfig({ textSize: 'large' }))
+    r2.draw(makeOptions(4), makeConfig({ textSize: 'large', drawLabels: true }))
     // 字号基数 large=20，按 300/280 缩放后约 21px
     expect(ctxLarge.font).toContain('21px')
   })

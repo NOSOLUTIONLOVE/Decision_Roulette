@@ -1,19 +1,48 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { WheelCanvas } from './WheelCanvas';
+import { WheelLabels } from './WheelLabels';
 import { WheelPointer } from './WheelPointer';
 import { WheelHub } from './WheelHub';
 import { SpinButton } from './SpinButton';
 import { Ornament } from '@/components/layout/Ornament';
 import { useSpinEngine } from '@/hooks/useSpinEngine';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
+import { useWheelStore } from '@/store/useWheelStore';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+
+/** Mobile default — kept identical to WheelCanvas. */
+const DEFAULT_CSS_SIZE = 280;
+
+/** Idle rotation speed: one full revolution per 120 seconds. */
+const IDLE_SPIN_SPEED_RAD_PER_MS = (Math.PI * 2) / 120_000;
 
 export function WheelStage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { startSpin, phase } = useSpinEngine(canvasRef);
+  const [angle, setAngle] = useState(0);
+  const { startSpin, phase } = useSpinEngine(canvasRef, setAngle);
   const { shouldDegrade } = usePerformanceMonitor();
+  const options = useWheelStore((s) => s.options);
+  const wheelAreaRef = useRef<HTMLDivElement>(null);
+  const measured = useResponsiveSize(wheelAreaRef, 'min');
+  const cssSize = measured > 0 ? measured : DEFAULT_CSS_SIZE;
 
   const isIdle = phase === 'idle';
   const tiltAngle = shouldDegrade ? 0 : 12;
+
+  // Idle rotation: drive both canvas and DOM labels via the same angle state.
+  useEffect(() => {
+    if (!isIdle) return;
+    let rafId = 0;
+    let lastTime = performance.now();
+    const rotate = (now: number) => {
+      const dt = now - lastTime;
+      lastTime = now;
+      setAngle((prev) => prev + dt * IDLE_SPIN_SPEED_RAD_PER_MS);
+      rafId = requestAnimationFrame(rotate);
+    };
+    rafId = requestAnimationFrame(rotate);
+    return () => cancelAnimationFrame(rafId);
+  }, [isIdle]);
 
   return (
     <div className="flex flex-col gap-7">
@@ -39,7 +68,10 @@ export function WheelStage() {
         />
 
         {/* Wheel area */}
-        <div className="relative mx-auto h-[300px] w-[300px] lg:h-[480px] lg:w-[480px] xl:h-[520px] xl:w-[520px]">
+        <div
+          ref={wheelAreaRef}
+          className="relative mx-auto h-[300px] w-[300px] lg:h-[480px] lg:w-[480px] xl:h-[520px] xl:w-[520px]"
+        >
           {/* Pointer (fixed, doesn't rotate) */}
           <WheelPointer />
 
@@ -72,17 +104,15 @@ export function WheelStage() {
                 }}
               />
 
-              {/* Idle spin animation wrapper */}
+              {/* Wheel canvas + DOM labels share the same rotation angle */}
               <div
-                className="h-full w-full"
+                className="relative h-full w-full"
                 style={{
-                  animation: isIdle
-                    ? 'idle-spin 120s linear infinite'
-                    : 'none',
                   transformOrigin: 'center center',
                 }}
               >
-                <WheelCanvas canvasRef={canvasRef} />
+                <WheelCanvas canvasRef={canvasRef} angle={angle} />
+                <WheelLabels options={options} angle={angle} size={cssSize} />
               </div>
             </div>
           </div>
