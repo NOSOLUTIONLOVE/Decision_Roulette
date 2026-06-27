@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PWA screenshot placeholder — narrow / portrait (1080×1920).
+  Replace with a real PNG screenshot of the main wheel interface before release.
+  Referenced from the Web App Manifest `screenshots` array (form_factor: 'narrow').
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920" role="img" aria-label="命运之轮主界面 — 竖屏占位截图">
+  <!-- Paper background gradient (mirrors cardRenderer palette) -->
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.45" stop-color="#faf9f5"/>
+      <stop offset="1" stop-color="#f1efe8"/>
+    </linearGradient>
+    <radialGradient id="vignette" cx="0.5" cy="1.1" r="0.7">
+      <stop offset="0" stop-color="#c96442" stop-opacity="0.1"/>
+      <stop offset="1" stop-color="#c96442" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1080" height="1920" fill="url(#paper)"/>
+  <rect width="1080" height="1920" fill="url(#vignette)"/>
+
+  <!-- Inner editorial frame -->
+  <rect x="40" y="40" width="1000" height="1840" fill="none" stroke="#28271b" stroke-opacity="0.12" stroke-width="2"/>
+
+  <!-- Eyebrow -->
+  <text x="540" y="220" text-anchor="middle" fill="#c96442"
+        font-family="Poppins, ui-sans-serif, system-ui, sans-serif"
+        font-size="40" font-weight="500" letter-spacing="7">— YOUR DESTINY —</text>
+
+  <!-- Wheel (simplified 6-sector placeholder) -->
+  <g transform="translate(540 900)">
+    <circle r="360" fill="#ffffff" stroke="#28271b" stroke-opacity="0.15" stroke-width="2"/>
+    <!-- 6 sectors -->
+    <g stroke="#ffffff" stroke-width="2">
+      <path d="M0,0 L360,0 A360,360 0 0,1 180,311.77 Z" fill="#c96442"/>
+      <path d="M0,0 L180,311.77 A360,360 0 0,1 -180,311.77 Z" fill="#3d3929"/>
+      <path d="M0,0 L-180,311.77 A360,360 0 0,1 -360,0 Z" fill="#e8a87c"/>
+      <path d="M0,0 L-360,0 A360,360 0 0,1 -180,-311.77 Z" fill="#8a6d3b"/>
+      <path d="M0,0 L-180,-311.77 A360,360 0 0,1 180,-311.77 Z" fill="#5d8aa8"/>
+      <path d="M0,0 L180,-311.77 A360,360 0 0,1 360,0 Z" fill="#6b8e23"/>
+    </g>
+    <circle r="36" fill="#3d3929"/>
+    <!-- Pointer at 12 o'clock -->
+    <path d="M-26,-400 L26,-400 L0,-338 Z" fill="#3d3929" stroke="#28271b" stroke-opacity="0.3"/>
+  </g>
+
+  <!-- Divider -->
+  <line x1="120" y1="1340" x2="960" y2="1340" stroke="#28271b" stroke-opacity="0.15" stroke-width="1.5"/>
+
+  <!-- Result -->
+  <text x="540" y="1520" text-anchor="middle" fill="#3d3929"
+        font-family="Newsreader, Georgia, serif" font-style="italic"
+        font-size="120" font-weight="500">一杯拿铁</text>
+
+  <!-- Fleuron -->
+  <g transform="translate(540 1620)" fill="#c96442" stroke="#c96442" stroke-width="2">
+    <path d="M0,-9 L9,0 L0,9 L-9,0 Z"/>
+    <line x1="-118" y1="0" x2="-22" y2="0"/>
+    <line x1="22" y1="0" x2="118" y2="0"/>
+    <circle cx="-127" cy="0" r="3"/>
+    <circle cx="127" cy="0" r="3"/>
+  </g>
+
+  <!-- Brand -->
+  <text x="540" y="1700" text-anchor="middle" fill="#3d3929"
+        font-family="Poppins, ui-sans-serif, system-ui, sans-serif"
+        font-size="34" font-weight="500">Decision Roulette</text>
+  <text x="540" y="1740" text-anchor="middle" fill="#6e6d68"
+        font-family="Lora, Georgia, serif" font-style="italic" font-size="24">
+    输入选项 · 转动转盘 · 接受指引
+  </text>
+</svg>

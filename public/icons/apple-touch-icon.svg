@@ -1,0 +1,31 @@
+<!--
+  命运之轮 Apple Touch Icon（180×180）
+  生产环境应将此 SVG 转换为 180×180 PNG（/icons/apple-touch-icon.png），
+  因为 iOS Safari 不支持 SVG 格式的 apple-touch-icon。
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180" role="img" aria-label="命运之轮">
+  <!-- 赭红色圆角背景（iOS apple-touch-icon 不应透明，需填充背景） -->
+  <rect width="180" height="180" rx="40" ry="40" fill="#c96442" />
+
+  <!-- 居中轮盘装饰：八等分扇形外环 -->
+  <g transform="translate(90 90)">
+    <!-- 外环 -->
+    <circle r="62" fill="none" stroke="#faf9f5" stroke-width="2.5" opacity="0.85" />
+    <!-- 内环 -->
+    <circle r="52" fill="none" stroke="#faf9f5" stroke-width="1" opacity="0.45" />
+
+    <!-- 八条分隔线，构成轮盘扇形 -->
+    <g stroke="#faf9f5" stroke-width="1.5" opacity="0.6">
+      <line x1="0" y1="-52" x2="0" y2="52" />
+      <line x1="-52" y1="0" x2="52" y2="0" />
+      <line x1="-36.77" y1="-36.77" x2="36.77" y2="36.77" />
+      <line x1="36.77" y1="-36.77" x2="-36.77" y2="36.77" />
+    </g>
+
+    <!-- 中心圆点 -->
+    <circle r="8" fill="#faf9f5" />
+
+    <!-- 顶部指针 -->
+    <polygon points="0,-72 -6,-60 6,-60" fill="#faf9f5" />
+  </g>
+</svg>

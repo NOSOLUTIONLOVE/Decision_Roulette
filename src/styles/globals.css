@@ -1,0 +1,215 @@
+/* === Fonts ===
+ * Inter (英文) + Noto Sans SC (中文) 通过 Google Fonts CDN 加载，
+ * 见 index.html 的 <link>。Noto Sans SC 按 unicode-range 自动分包，
+ * 只下载页面用到的字符子集，避免下载完整 CJK 字体。
+ * Geist Mono 保留本地托管（PWA 离线可用）。
+ */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/geist-mono-normal-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/geist-mono-normal-500.woff2') format('woff2');
+}
+
+@import "tailwindcss";
+@import "./animations.css";
+
+/* === Design Tokens — Warm Editorial (Claude-inspired) === */
+@theme {
+  /* Brand — terra-cotta */
+  --color-brand-50: #fbf2ed;
+  --color-brand-100: #f4e0d5;
+  --color-brand-200: #ebc6b6;
+  --color-brand-300: #e0a892;
+  --color-brand-400: #d6866a;
+  --color-brand-500: #c96442;
+  --color-brand-600: #b0562f;
+  --color-brand-700: #934828;
+  --color-brand-800: #753a22;
+  --color-brand-900: #582e1d;
+
+  /* Text — warm gray */
+  --color-ink-50: #f6f5f0;
+  --color-ink-100: #ece9de;
+  --color-ink-200: #dad9d4;
+  --color-ink-300: #c2c0b6;
+  --color-ink-400: #9b988c;
+  --color-ink-500: #6e6d68;
+  --color-ink-600: #535146;
+  --color-ink-700: #46443b;
+  --color-ink-800: #3d3929;
+  --color-ink-900: #28261b;
+
+  /* Background — paper */
+  --color-paper-50: #ffffff;
+  --color-paper-100: #faf9f5;
+  --color-paper-200: #f5f4ef;
+  --color-paper-300: #ede9de;
+  --color-paper-400: #e3e0d4;
+  --color-paper-500: #dad9d4;
+
+  /* Border */
+  --color-line-200: #e3e0d4;
+  --color-line-300: #dad9d4;
+  --color-line-400: #cdcabf;
+  --color-line-500: #b4b2a7;
+
+  /* State */
+  --color-success: #788c5d;
+  --color-error: #d64545;
+  --color-warning: #b88a3e;
+
+  /* Wheel sector colors */
+  --color-wheel-1: #c96442;
+  --color-wheel-2: #788c5d;
+  --color-wheel-3: #d6b65a;
+  --color-wheel-4: #8b6f47;
+  --color-wheel-5: #9c87f5;
+  --color-wheel-6: #b05730;
+  --color-wheel-7: #6b4f3a;
+  --color-wheel-8: #a89373;
+
+  /* Typography — Inter (英文) + Noto Sans SC (中文)，无衬线现代风 */
+  --font-display: "Inter", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+  --font-body: "Inter", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+  --font-ui: "Inter", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+}
+
+/* === Base === */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--color-paper-100);
+  -webkit-text-size-adjust: 100%;
+  color-scheme: light;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:root.dark {
+  color-scheme: dark;
+}
+
+button {
+  touch-action: manipulation;
+}
+
+body {
+  background-color: var(--color-paper-100);
+  color: var(--color-ink-800);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  line-height: 1.625;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* === App shell — 主题驱动的背景，随主题切换 === */
+.app-shell {
+  background:
+    radial-gradient(ellipse 100% 60% at 50% 0%, var(--color-paper-50) 0%, var(--color-paper-100) 50%, var(--color-paper-200) 100%);
+}
+
+.app-shell__vignette {
+  background: radial-gradient(ellipse 80% 50% at 50% 100%, color-mix(in srgb, var(--color-brand-500) 4%, transparent) 0%, transparent 60%);
+}
+
+/* === 卡片阴影 —— 通过 ink-900 派生，深色主题下自动反相 === */
+.wheel-stage,
+.options-panel {
+  background: var(--color-paper-200);
+  border: 1px solid var(--color-line-300);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.4),
+    0 1px 3px color-mix(in srgb, var(--color-ink-900) 6%, transparent),
+    0 4px 16px color-mix(in srgb, var(--color-ink-900) 5%, transparent);
+}
+
+:root.dark .wheel-stage,
+:root.dark .options-panel {
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    0 1px 3px rgba(0,0,0,0.3),
+    0 4px 16px rgba(0,0,0,0.25);
+}
+
+/* 轮盘外圈阴影 */
+.wheel-stage .absolute.inset-0.rounded-full {
+  box-shadow:
+    inset 0 2px 8px color-mix(in srgb, var(--color-ink-900) 10%, transparent),
+    0 8px 32px color-mix(in srgb, var(--color-ink-900) 8%, transparent);
+}
+
+:root.dark .wheel-stage .absolute.inset-0.rounded-full {
+  box-shadow:
+    inset 0 2px 12px rgba(0,0,0,0.4),
+    0 8px 32px rgba(0,0,0,0.35);
+}
+
+/* 轮盘 canvas 边缘层次 */
+.wheel-canvas {
+  box-shadow:
+    inset 0 0 0 2px var(--color-ink-800),
+    0 2px 8px color-mix(in srgb, var(--color-ink-900) 15%, transparent),
+    0 4px 16px color-mix(in srgb, var(--color-ink-900) 8%, transparent);
+}
+
+:root.dark .wheel-canvas {
+  box-shadow:
+    inset 0 0 0 2px var(--color-ink-900),
+    0 2px 8px rgba(0,0,0,0.4),
+    0 4px 16px rgba(0,0,0,0.3);
+}
+
+/* 指针投影 —— 主题驱动 */
+.wheel-pointer {
+  filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--color-ink-900) 30%, transparent));
+}
+
+:root.dark .wheel-pointer {
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+/* Scrollbar hidden */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Focus visible */
+:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

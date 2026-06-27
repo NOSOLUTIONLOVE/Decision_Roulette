@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN" class="light">
+  <head>
+    <script>
+      (function () {
+        var holder = function () {
+          return { exportedColors: {} };
+        };
+        try {
+          Object.defineProperty(window, 'getThemeColors', {
+            get: function () {
+              return holder;
+            },
+            set: function (fn) {
+              holder = typeof fn === 'function' ? fn : holder;
+            },
+            configurable: true,
+            enumerable: true,
+          });
+        } catch (e) {
+          window.getThemeColors = holder;
+        }
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#c96442" />
+    <meta name="description" content="输入选项，生成炫酷 3D 轮盘，把选择困难变成一场仪式感体验。" />
+    <title>命运之轮 — Decision Roulette</title>
+
+    <!-- Canonical — 部署时替换为实际域名 -->
+    <link rel="canonical" href="https://decision-roulette.app/" />
+
+    <!-- iOS / 桌面 PWA meta -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="命运之轮" />
+    <meta name="application-name" content="命运之轮" />
+    <meta name="msapplication-TileColor" content="#c96442" />
+
+    <!-- apple-touch-icon
+         生产环境应提供 180×180 PNG 版本并替换为：
+         <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" /> -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.svg" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:site_name" content="命运之轮" />
+    <meta property="og:title" content="命运之轮 — Decision Roulette" />
+    <meta property="og:description" content="输入选项，生成炫酷 3D 轮盘，把选择困难变成一场仪式感体验。" />
+    <meta property="og:url" content="/" />
+    <!-- 生产环境应替换为 1200×630 PNG：/og-default.png -->
+    <meta property="og:image" content="/og-default.svg" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="命运之轮 — Decision Roulette" />
+    <meta name="twitter:description" content="输入选项，生成炫酷 3D 轮盘，把选择困难变成一场仪式感体验。" />
+    <!-- 生产环境应替换为 1200×630 PNG：/og-default.png -->
+    <meta name="twitter:image" content="/og-default.svg" />
+
+    <!-- 字体：Inter (英文) + Noto Sans SC (中文)，无衬线现代风 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Noto+Sans+SC:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- JSON-LD 结构化数据：WebApplication -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "命运之轮",
+        "alternateName": "Decision Roulette",
+        "description": "输入选项，生成炫酷 3D 轮盘，把选择困难变成一场仪式感体验。",
+        "url": "/",
+        "applicationCategory": "UtilityApplication",
+        "operatingSystem": "Any (PWA)",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "CNY"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#c96442" />
+    <title>当前离线 · 命运之轮</title>
+    <style>
+      :root {
+        --brand: #c96442;
+        --ink: #3d3929;
+        --ink-muted: #6e6d68;
+        --paper: #faf9f5;
+        --line: rgba(40, 38, 27, 0.12);
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 32px;
+        font-family: -apple-system, BlinkMacSystemFont, "Poppins", "Segoe UI",
+          system-ui, sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 50% 110%, rgba(201, 100, 66, 0.1), transparent 60%),
+          linear-gradient(180deg, #ffffff 0%, var(--paper) 45%, #f1efe8 100%);
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+      .card {
+        width: 100%;
+        max-width: 420px;
+        text-align: center;
+        padding: 48px 28px 44px;
+        background: #ffffff;
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        box-shadow: 0 24px 60px -28px rgba(40, 38, 27, 0.25);
+      }
+      .ornament {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        margin-bottom: 28px;
+        color: var(--brand);
+      }
+      .ornament .line {
+        height: 1px;
+        width: 56px;
+        background: currentColor;
+        opacity: 0.5;
+      }
+      .ornament .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+      .wheel {
+        width: 96px;
+        height: 96px;
+        margin: 0 auto 24px;
+        animation: spin 12s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      h1 {
+        font-family: Georgia, "Newsreader", serif;
+        font-style: italic;
+        font-weight: 500;
+        font-size: 28px;
+        line-height: 1.2;
+        margin-bottom: 14px;
+        color: var(--ink);
+      }
+      .eyebrow {
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        color: var(--brand);
+        margin-bottom: 10px;
+      }
+      p {
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--ink-muted);
+        margin: 0 auto 28px;
+        max-width: 30ch;
+      }
+      .retry {
+        appearance: none;
+        border: none;
+        cursor: pointer;
+        font: inherit;
+        font-size: 15px;
+        font-weight: 500;
+        padding: 14px 36px;
+        color: #ffffff;
+        background: var(--brand);
+        border-radius: 999px;
+        transition: background 0.2s ease, transform 0.1s ease;
+      }
+      .retry:hover {
+        background: #b85736;
+      }
+      .retry:active {
+        transform: scale(0.98);
+      }
+      .brand {
+        margin-top: 32px;
+        font-size: 12px;
+        letter-spacing: 1px;
+        color: var(--ink-muted);
+        opacity: 0.7;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background:
+            radial-gradient(circle at 50% 110%, rgba(201, 100, 66, 0.18), transparent 60%),
+            linear-gradient(180deg, #2a271c 0%, #1f1d15 100%);
+        }
+        .card {
+          background: #2a271c;
+          border-color: rgba(255, 255, 255, 0.08);
+          box-shadow: 0 24px 60px -28px rgba(0, 0, 0, 0.6);
+        }
+        h1 {
+          color: #f5f1e6;
+        }
+        .brand,
+        p {
+          color: #b5ad9c;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="ornament" aria-hidden="true">
+        <span class="line"></span>
+        <span class="dot"></span>
+        <span class="line"></span>
+      </div>
+
+      <svg class="wheel" viewBox="0 0 100 100" role="img" aria-label="命运之轮">
+        <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="rgba(40,38,27,0.15)" stroke-width="1" />
+        <path d="M50,50 L98,50 A48,48 0 0,1 74,88.84 Z" fill="#c96442" />
+        <path d="M50,50 L74,88.84 A48,48 0 0,1 26,88.84 Z" fill="#3d3929" />
+        <path d="M50,50 L26,88.84 A48,48 0 0,1 2,50 Z" fill="#e8a87c" />
+        <path d="M50,50 L2,50 A48,48 0 0,1 26,11.16 Z" fill="#8a6d3b" />
+        <path d="M50,50 L26,11.16 A48,48 0 0,1 74,11.16 Z" fill="#5d8aa8" />
+        <path d="M50,50 L74,11.16 A48,48 0 0,1 98,50 Z" fill="#6b8e23" />
+        <circle cx="50" cy="50" r="6" fill="#3d3929" />
+        <path d="M44,0 L56,0 L50,12 Z" fill="#3d3929" />
+      </svg>
+
+      <div class="eyebrow">OFFLINE</div>
+      <h1>当前离线</h1>
+      <p>命运之轮需要网络连接才能首次加载，已缓存的页面仍可使用。</p>
+
+      <button class="retry" onclick="location.reload()">重试</button>
+
+      <div class="brand">命运之轮 · Decision Roulette</div>
+    </main>
+  </body>
+</html>

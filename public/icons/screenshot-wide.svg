@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PWA screenshot placeholder — wide / landscape (1920×1080).
+  Replace with a real PNG screenshot of the desktop layout before release.
+  Referenced from the Web App Manifest `screenshots` array (form_factor: 'wide').
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-label="命运之轮桌面端 — 宽屏占位截图">
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.5" stop-color="#faf9f5"/>
+      <stop offset="1" stop-color="#f1efe8"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#paper)"/>
+
+  <!-- Top app bar -->
+  <rect x="0" y="0" width="1920" height="96" fill="#faf9f5"/>
+  <line x1="0" y1="96" x2="1920" y2="96" stroke="#28271b" stroke-opacity="0.12" stroke-width="1"/>
+  <text x="60" y="62" fill="#3d3929"
+        font-family="Poppins, ui-sans-serif, system-ui, sans-serif"
+        font-size="30" font-weight="600">命运之轮</text>
+  <text x="1860" y="62" text-anchor="end" fill="#6e6d68"
+        font-family="Lora, Georgia, serif" font-style="italic" font-size="20">
+    输入选项 · 转动转盘 · 接受指引
+  </text>
+
+  <!-- Left: options panel -->
+  <g transform="translate(80 180)">
+    <rect width="520" height="820" rx="24" fill="#ffffff" stroke="#28271b" stroke-opacity="0.1"/>
+    <text x="40" y="60" fill="#3d3929"
+          font-family="Poppins, ui-sans-serif, system-ui, sans-serif"
+          font-size="22" font-weight="500" letter-spacing="4">OPTIONS</text>
+    <line x1="40" y1="84" x2="480" y2="84" stroke="#28271b" stroke-opacity="0.1"/>
+    <g font-family="Poppins, ui-sans-serif, system-ui, sans-serif" font-size="24" fill="#3d3929">
+      <circle cx="60" cy="150" r="8" fill="#c96442"/><text x="90" y="158">一杯拿铁</text>
+      <circle cx="60" cy="210" r="8" fill="#3d3929"/><text x="90" y="218">美式咖啡</text>
+      <circle cx="60" cy="270" r="8" fill="#e8a87c"/><text x="90" y="278">手冲单品</text>
+      <circle cx="60" cy="330" r="8" fill="#5d8aa8"/><text x="90" y="338">卡布奇诺</text>
+      <circle cx="60" cy="390" r="8" fill="#6b8e23"/><text x="90" y="398">燕麦拿铁</text>
+      <circle cx="60" cy="450" r="8" fill="#8a6d3b"/><text x="90" y="458">冷萃咖啡</text>
+    </g>
+    <rect x="40" y="700" width="440" height="80" rx="16" fill="#c96442"/>
+    <text x="260" y="750" text-anchor="middle" fill="#ffffff"
+          font-family="Poppins, ui-sans-serif, system-ui, sans-serif"
+          font-size="26" font-weight="500">转动命运之轮</text>
+  </g>
+
+  <!-- Right: wheel -->
+  <g transform="translate(1200 540)">
+    <circle r="380" fill="#ffffff" stroke="#28271b" stroke-opacity="0.15" stroke-width="2"/>
+    <g stroke="#ffffff" stroke-width="2">
+      <path d="M0,0 L380,0 A380,380 0 0,1 190,329.09 Z" fill="#c96442"/>
+      <path d="M0,0 L190,329.09 A380,380 0 0,1 -190,329.09 Z" fill="#3d3929"/>
+      <path d="M0,0 L-190,329.09 A380,380 0 0,1 -380,0 Z" fill="#e8a87c"/>
+      <path d="M0,0 L-380,0 A380,380 0 0,1 -190,-329.09 Z" fill="#8a6d3b"/>
+      <path d="M0,0 L-190,-329.09 A380,380 0 0,1 190,-329.09 Z" fill="#5d8aa8"/>
+      <path d="M0,0 L190,-329.09 A380,380 0 0,1 380,0 Z" fill="#6b8e23"/>
+    </g>
+    <circle r="40" fill="#3d3929"/>
+    <path d="M-28,-420 L28,-420 L0,-358 Z" fill="#3d3929" stroke="#28271b" stroke-opacity="0.3"/>
+  </g>
+
+  <!-- Result badge -->
+  <g transform="translate(1200 940)">
+    <rect x="-220" y="-44" width="440" height="88" rx="44" fill="#ffffff" stroke="#c96442" stroke-width="2"/>
+    <text x="0" y="14" text-anchor="middle" fill="#c96442"
+          font-family="Newsreader, Georgia, serif" font-style="italic"
+          font-size="44" font-weight="500">命运替你决定：一杯拿铁</text>
+  </g>
+</svg>
