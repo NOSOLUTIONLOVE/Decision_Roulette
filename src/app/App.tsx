@@ -3,7 +3,9 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { LoaderCircle } from 'lucide-react';
 import { AppShell } from './AppShell';
 import { ReloadPrompt } from '@/components/pwa/ReloadPrompt';
-import { initAnalytics, trackPageview } from '@/lib/analytics';
+import { trackPageview, setAnalyticsConsent, reportWebVitals } from '@/lib/analytics';
+import { setMonitoringConsent } from '@/lib/monitoring';
+import { useSettingsStore } from '@/store/useSettingsStore';
 
 const WheelPage = lazy(() => import('@/pages/WheelPage'));
 const ShareResultPage = lazy(() => import('@/pages/ShareResultPage'));
@@ -25,21 +27,29 @@ function Loader() {
 }
 
 /**
- * 路由监听组件 — 初始化分析并跟踪路由变化。
+ * 路由监听组件 — 根据用户同意初始化分析/监控，并跟踪路由变化。
  *
  * 必须挂在 `<BrowserRouter>` 内部，以使用 useLocation。
- * initAnalytics 幂等；trackPageview 在每次 pathname 变化时触发。
+ * analyticsConsent 从 useSettingsStore 读取；仅当用户同意时才注入脚本与上报。
  */
 function RouteTracker() {
   const location = useLocation();
+  const consent = useSettingsStore((s) => s.analyticsConsent);
+
+  // 同意状态变化时同步到 analytics + monitoring
+  useEffect(() => {
+    setAnalyticsConsent(consent);
+    setMonitoringConsent(consent);
+    if (consent) {
+      reportWebVitals();
+    }
+  }, [consent]);
 
   useEffect(() => {
-    initAnalytics();
-  }, []);
-
-  useEffect(() => {
-    trackPageview(location.pathname);
-  }, [location.pathname]);
+    if (consent) {
+      trackPageview(location.pathname);
+    }
+  }, [location.pathname, consent]);
 
   return null;
 }

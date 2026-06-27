@@ -12,9 +12,19 @@ import { useLocaleStore } from '@/store/useLocaleStore';
 import { haptics } from '@/lib/haptics';
 import type { SpinResult } from '@/types/engine';
 
+// 结果展示时序（PRD 规定）：停止 → 延迟 → 扇区高亮闪烁 N 次 → 弹出结果卡片
+const RESULT_REVEAL_DELAY_MS = 200; // 停止后延迟 200ms 再开始闪烁
+const RESULT_FLASH_COUNT = 3; // 扇区高亮闪烁 3 次
+const RESULT_FLASH_STEP_MS = 100; // 单步 100ms：100ms 关 + 100ms 开 = 200ms/次
+
 export function useSpinEngine(canvasRef: React.RefObject<HTMLCanvasElement | null>) {
-  const { options, phase, setPhase, setResult, reset } = useWheelStore();
-  const { setResultOpen } = useUIStore();
+  // 拆分为独立 selector：避免订阅整个 store 导致 chargeRatio 等无关字段变化时也重渲染
+  const options = useWheelStore((s) => s.options);
+  const phase = useWheelStore((s) => s.phase);
+  const setPhase = useWheelStore((s) => s.setPhase);
+  const setResult = useWheelStore((s) => s.setResult);
+  const resetSpin = useWheelStore((s) => s.resetSpin);
+  const setResultOpen = useUIStore((s) => s.setResultOpen);
   const addToast = useToastStore((s) => s.addToast);
   const themeId = useSettingsStore((s) => s.themeId);
   const t = useLocaleStore((s) => s.t);
@@ -90,7 +100,7 @@ export function useSpinEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
             const option = options[sectorIndex];
 
             if (!option) {
-              reset();
+              resetSpin();
               return;
             }
 
@@ -108,8 +118,8 @@ export function useSpinEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
             // PRD 时序：停止 → 200ms 延迟 → 扇区高亮闪烁 3 次（共 600ms）→ 弹出结果卡片
             safeSetTimeout(() => {
               let flashCount = 0;
-              const totalFlashes = 3;
-              const flashStep = 100; // 单步 100ms：100ms 关 + 100ms 开 = 200ms/次
+              const totalFlashes = RESULT_FLASH_COUNT;
+              const flashStep = RESULT_FLASH_STEP_MS;
 
               const doFlash = () => {
                 if (flashCount >= totalFlashes) {
@@ -135,21 +145,24 @@ export function useSpinEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
               };
 
               doFlash();
-            }, 200);
+            }, RESULT_REVEAL_DELAY_MS);
           },
         },
       );
     },
-    [options, phase, setPhase, setResult, setResultOpen, reset, saveToHistory, canvasRef, safeSetTimeout],
+    [options, phase, setPhase, setResult, setResultOpen, resetSpin, saveToHistory, canvasRef, safeSetTimeout],
   );
 
-  // Cleanup on unmount — 同时清理闪烁 setTimeout 链
+  // Cleanup on unmount — 同时清理闪烁 setTimeout 链与 store 状态
+  // 使用 getState() 获取最新 resetSpin 引用，避免空依赖闭包捕获过期值
   useEffect(() => {
     return () => {
       animationLoop.stop();
       audioEngine.stopCharge();
       flashTimeoutsRef.current.forEach(clearTimeout);
       flashTimeoutsRef.current = [];
+      // 重置 phase/result/chargeRatio，防止组件重新挂载时残留 'accelerating' 等中间态
+      useWheelStore.getState().resetSpin();
     };
   }, []);
 

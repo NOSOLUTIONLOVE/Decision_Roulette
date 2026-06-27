@@ -22,11 +22,15 @@ export function OptionItem({
   isHoverTarget = false,
   onPointerDown,
 }: OptionItemProps) {
-  const { removeOption, updateOption } = useWheelStore();
+  const removeOption = useWheelStore((s) => s.removeOption);
+  const updateOption = useWheelStore((s) => s.updateOption);
+  const phase = useWheelStore((s) => s.phase);
   const t = useLocaleStore((s) => s.t);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(option.text);
   const color = resolveColor(option.color);
+  // 转动期间锁定所有编辑操作：避免修改/删除打乱扇区映射
+  const isLocked = phase !== 'idle';
 
   const handleSave = () => {
     const trimmed = editText.trim();
@@ -65,7 +69,7 @@ export function OptionItem({
       }}
     >
       {/* Drag handle */}
-      {onPointerDown && !editing && (
+      {onPointerDown && !editing && !isLocked && (
         <button
           onPointerDown={(e) => onPointerDown(index, e)}
           className="cursor-grab touch-none text-[var(--color-ink-400)] opacity-0 transition-opacity hover:text-[var(--color-ink-600)] group-hover:opacity-100 active:cursor-grabbing"
@@ -104,8 +108,9 @@ export function OptionItem({
         />
       ) : (
         <button
-          onClick={() => setEditing(true)}
-          className="flex-1 truncate text-left text-[15px] lg:text-[16px] text-[var(--color-ink-700)]"
+          onClick={() => !isLocked && setEditing(true)}
+          disabled={isLocked}
+          className="flex-1 truncate text-left text-[15px] lg:text-[16px] text-[var(--color-ink-700)] disabled:cursor-not-allowed"
           style={{ fontFamily: 'var(--font-body)' }}
         >
           {option.text}
@@ -132,10 +137,12 @@ export function OptionItem({
       ) : (
         <button
           onClick={() => {
+            if (isLocked) return;
             removeOption(option.id);
             haptics.light();
           }}
-          className="flex h-6 w-6 items-center justify-center rounded-full text-[var(--color-ink-400)] opacity-0 transition-[opacity,background-color,color] hover:bg-[var(--color-paper-200)] hover:text-[var(--color-error)] group-hover:opacity-100"
+          disabled={isLocked}
+          className="flex h-6 w-6 items-center justify-center rounded-full text-[var(--color-ink-400)] opacity-0 transition-[opacity,background-color,color] hover:bg-[var(--color-paper-200)] hover:text-[var(--color-error)] group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
           aria-label={t('option.delete')}
         >
           <X size={14} strokeWidth={1.5} />

@@ -10,6 +10,7 @@ import { OptionItem } from './OptionItem';
 
 export function OptionsList() {
   const options = useWheelStore((s) => s.options);
+  const phase = useWheelStore((s) => s.phase);
   const clearOptions = useWheelStore((s) => s.clearOptions);
   const reorderOptions = useWheelStore((s) => s.reorderOptions);
   const setPresetDialogOpen = useUIStore((s) => s.setPresetDialogOpen);
@@ -17,6 +18,8 @@ export function OptionsList() {
   const t = useLocaleStore((s) => s.t);
   const [confirmClear, setConfirmClear] = useState(false);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 转动期间锁定 clearAll（reorder / edit 已在底层组件各自守卫）
+  const isLocked = phase !== 'idle';
 
   useEffect(() => {
     return () => {
@@ -90,7 +93,8 @@ export function OptionsList() {
           <button
             type="button"
             onClick={handleClear}
-            className="flex items-center gap-1.5 text-[12px] transition-colors"
+            disabled={isLocked}
+            className="flex items-center gap-1.5 text-[12px] transition-colors disabled:cursor-not-allowed disabled:opacity-30"
             style={{
               fontFamily: 'var(--font-ui)',
               fontWeight: 500,

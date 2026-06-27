@@ -24,10 +24,24 @@ declare module '@sentry/react' {
     setContext(name: string, context: Record<string, unknown> | null): void;
   }
 
+  /** 最小化 Sentry Event 类型 — 仅覆盖 monitoring.ts 中使用到的字段 */
+  export interface SentryEvent {
+    breadcrumbs?: Array<{ category?: string; message?: string; level?: string }>;
+  }
+
+  /** 最小化 Sentry Breadcrumb 类型 */
+  export interface Breadcrumb {
+    category?: string;
+    message?: string;
+    level?: string;
+  }
+
   export interface BrowserOptions {
     dsn: string;
     release?: string;
     environment?: string;
+    beforeSend?: (event: SentryEvent) => SentryEvent | null;
+    beforeBreadcrumb?: (breadcrumb: Breadcrumb) => Breadcrumb | null;
   }
 
   export function init(options: BrowserOptions): void;

@@ -78,16 +78,9 @@ export default defineConfig({
             label: '命运之轮桌面端',
           },
         ],
-        share_target: {
-          action: '/',
-          method: 'GET',
-          params: {
-            text: 'text',
-          },
-        },
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        globPatterns: ['index.html', 'favicon.svg', 'icons/pwa-*.png', 'icons/maskable-*.png', 'fonts/*.woff2', 'assets/*.js', 'assets/*.css'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api/, /^\/share/],
         runtimeCaching: [

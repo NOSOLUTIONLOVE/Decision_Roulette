@@ -22,11 +22,25 @@ const RELEASE = `decision-roulette@${version}`;
 let initialized = false;
 let sentry: SentryModule | null = null;
 
+/** captureException 允许的 context 键白名单——防止用户选项文本等 PII 泄露到 Sentry。 */
+const ALLOWED_CONTEXT_KEYS = new Set([
+  'type',
+  'filename',
+  'lineno',
+  'colno',
+  'phase',
+  'message',
+]);
+
+/** 面包屑分类拒绝列表——过滤可能携带用户数据的面包屑。 */
+const DENIED_BREADCRUMB_CATEGORIES = new Set(['ui', 'fetch', 'xhr', 'location']);
+
 /**
  * 初始化监控。
  *
  * 幂等：重复调用不会重复初始化。
  * 未配置 DSN 时为 no-op；配置了 DSN 但 @sentry/react 未安装时仅打印警告。
+ * 需用户同意后才执行（通过 setMonitoringConsent 触发）。
  */
 export async function initMonitoring(): Promise<void> {
   if (initialized) return;
@@ -37,10 +51,6 @@ export async function initMonitoring(): Promise<void> {
   }
 
   try {
-    // 使用变量作为 import() 说明符，使 Vite 无法在构建/转换期静态解析此模块。
-    // 仅当 initMonitoring 在运行时实际执行此 import 时，浏览器才会请求 @sentry/react；
-    // 若包未安装则 import() reject，由下方 catch 处理，应用继续运行。
-    // 类型通过 ambient 声明 + as 断言保证安全。
     const sentryModule = '@sentry/react';
     const Sentry = (await import(/* @vite-ignore */ sentryModule)) as SentryModule;
     sentry = Sentry;
@@ -48,12 +58,34 @@ export async function initMonitoring(): Promise<void> {
       dsn: SENTRY_DSN,
       release: RELEASE,
       environment: import.meta.env.MODE,
+      beforeSend(event) {
+        // 过滤可能携带用户数据的面包屑。
+        if (event.breadcrumbs) {
+          event.breadcrumbs = event.breadcrumbs.filter(
+            (b) => !DENIED_BREADCRUMB_CATEGORIES.has(b.category ?? ''),
+          );
+        }
+        return event;
+      },
+      beforeBreadcrumb(breadcrumb) {
+        if (DENIED_BREADCRUMB_CATEGORIES.has(breadcrumb.category ?? '')) {
+          return null;
+        }
+        return breadcrumb;
+      },
     });
   } catch (error) {
     console.warn(
       '[monitoring] Failed to load @sentry/react. Install it with: npm install @sentry/react',
       error,
     );
+  }
+}
+
+/** 设置用户同意状态。仅当 consent=true 时才初始化监控。 */
+export function setMonitoringConsent(consent: boolean): void {
+  if (consent) {
+    void initMonitoring();
   }
 }
 
@@ -71,8 +103,15 @@ export function captureException(error: unknown, context?: MonitoringContext): v
   }
 
   if (context) {
+    // 仅允许白名单内的 context 键，防止用户选项文本等 PII 泄露。
+    const filtered: MonitoringContext = {};
+    for (const [key, value] of Object.entries(context)) {
+      if (ALLOWED_CONTEXT_KEYS.has(key)) {
+        filtered[key] = value;
+      }
+    }
     client.withScope((scope) => {
-      for (const [key, value] of Object.entries(context)) {
+      for (const [key, value] of Object.entries(filtered)) {
         scope.setContext(key, { value });
       }
       client.captureException(error);

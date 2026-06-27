@@ -269,7 +269,7 @@ describe('WheelRenderer.draw（mock canvas）', () => {
     expect(arcCalls.length).toBeGreaterThanOrEqual(n)
     const sectorAngle = (Math.PI * 2) / n
     for (let i = 0; i < n; i += 1) {
-      const call = arcCalls[i]
+      const call = arcCalls[i]!
       // arc(cx, cy, radius, startAngle, endAngle)
       expect(call[0]).toBe(150) // cx
       expect(call[1]).toBe(150) // cy
@@ -290,8 +290,9 @@ describe('WheelRenderer.draw（mock canvas）', () => {
     const arcCalls = (ctx.arc as ReturnType<typeof vi.fn>).mock.calls
     const sectorAngle = Math.PI
     for (let i = 0; i < 2; i += 1) {
-      const startAngle = arcCalls[i][3] as number
-      const endAngle = arcCalls[i][4] as number
+      const call = arcCalls[i]!
+      const startAngle = call[3] as number
+      const endAngle = call[4] as number
       expect(endAngle - startAngle).toBeCloseTo(sectorAngle, 5)
     }
   })
@@ -304,8 +305,9 @@ describe('WheelRenderer.draw（mock canvas）', () => {
     const arcCalls = (ctx.arc as ReturnType<typeof vi.fn>).mock.calls
     const sectorAngle = (Math.PI * 2) / 12
     for (let i = 0; i < 12; i += 1) {
-      const startAngle = arcCalls[i][3] as number
-      const endAngle = arcCalls[i][4] as number
+      const call = arcCalls[i]!
+      const startAngle = call[3] as number
+      const endAngle = call[4] as number
       expect(endAngle - startAngle).toBeCloseTo(sectorAngle, 5)
     }
   })
@@ -319,8 +321,9 @@ describe('WheelRenderer.draw（mock canvas）', () => {
     expect(arcCalls.length).toBeGreaterThanOrEqual(50)
     const sectorAngle = (Math.PI * 2) / 50
     for (let i = 0; i < 50; i += 1) {
-      const startAngle = arcCalls[i][3] as number
-      const endAngle = arcCalls[i][4] as number
+      const call = arcCalls[i]!
+      const startAngle = call[3] as number
+      const endAngle = call[4] as number
       expect(endAngle - startAngle).toBeCloseTo(sectorAngle, 5)
     }
   })
@@ -383,7 +386,8 @@ describe('WheelRenderer.draw（mock canvas）', () => {
     const arcCalls = (ctx.arc as ReturnType<typeof vi.fn>).mock.calls
     const sectorAngle = (Math.PI * 2) / n
     for (let i = 0; i < n; i += 1) {
-      const startAngle = arcCalls[i][3] as number
+      const call = arcCalls[i]!
+      const startAngle = call[3] as number
       const expectedStart = i * sectorAngle - Math.PI / 2 + angle
       expect(startAngle).toBeCloseTo(expectedStart, 5)
     }

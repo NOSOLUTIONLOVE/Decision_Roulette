@@ -109,6 +109,18 @@ export default function PrivacyPage() {
             {t('privacy.section5Tail')}
           </p>
         </section>
+
+        <section>
+          <h2
+            className="mb-2.5 text-[15px] font-medium text-[var(--color-ink-900)]"
+            style={{ fontFamily: 'var(--font-ui)' }}
+          >
+            {t('privacy.section6Title')}
+          </h2>
+          <p>
+            {t('privacy.section6Body')}
+          </p>
+        </section>
       </article>
 
       {/* CTA */}

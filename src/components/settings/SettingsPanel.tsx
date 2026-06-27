@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { useUIStore } from '@/store/useUIStore';
 import { useLocaleStore } from '@/store/useLocaleStore';
+import { useSettingsStore } from '@/store/useSettingsStore';
 import { ThemePicker } from './ThemePicker';
 import { TextSizeSlider } from './TextSizeSlider';
 import { PointerStylePicker } from './PointerStylePicker';
@@ -85,6 +86,9 @@ export function SettingsPanel() {
           <Section title={t('settings.pointerTitle')} desc={t('settings.pointerDesc')}>
             <PointerStylePicker />
           </Section>
+          <Section title={t('settings.consentTitle')} desc={t('settings.consentDesc')}>
+            <ConsentToggle />
+          </Section>
         </div>
       </aside>
     </div>
@@ -118,5 +122,54 @@ function Section({
       </div>
       {children}
     </section>
+  );
+}
+
+/**
+ * 同意开关 — 控制 Plausible / Sentry 的匿名数据收集。
+ *
+ * 使用 role=switch + 空格/回车键盘切换，符合 WAI-ARIA Switch 模式。
+ * 状态持久化由 useSettingsStore.setAnalyticsConsent 完成。
+ */
+function ConsentToggle() {
+  const consent = useSettingsStore((s) => s.analyticsConsent);
+  const setConsent = useSettingsStore((s) => s.setAnalyticsConsent);
+  const t = useLocaleStore((s) => s.t);
+
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={consent}
+      aria-label={t('settings.consentTitle')}
+      onClick={() => setConsent(!consent)}
+      className="flex w-full items-center justify-between rounded-[var(--radius-md)] border border-[var(--color-line-300)] bg-[var(--color-paper-50)] px-4 py-3 transition-colors hover:border-[var(--color-brand-300)]"
+    >
+      <span
+        className="text-[12px]"
+        style={{
+          fontFamily: 'var(--font-ui)',
+          fontWeight: 500,
+          color: 'var(--color-ink-700)',
+        }}
+      >
+        {consent ? t('settings.consentOn') : t('settings.consentOff')}
+      </span>
+      <span
+        className="relative h-5 w-9 rounded-full transition-colors"
+        style={{
+          backgroundColor: consent
+            ? 'var(--color-brand-500)'
+            : 'var(--color-line-400)',
+        }}
+      >
+        <span
+          className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform"
+          style={{
+            transform: consent ? 'translateX(18px)' : 'translateX(2px)',
+          }}
+        />
+      </span>
+    </button>
   );
 }

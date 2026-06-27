@@ -6,6 +6,12 @@ const SHARE_QUERY_KEY = 'd';
 /** Hard cap on the final share URL length (safe for most messengers / browsers). */
 const SHARE_MAX_LENGTH = 2000;
 
+/** Security caps for decoded payloads — prevent DoS via crafted share URLs. */
+const DECODE_MAX_ENCODED_LENGTH = 4096;
+const DECODE_MAX_OPTIONS = 50;
+const DECODE_MAX_TEXT_LENGTH = 100;
+const DECODE_MAX_RESULT_LENGTH = 200;
+
 /** Fallback color when the payload lacks a result color. */
 const FALLBACK_RESULT_COLOR = 'var(--color-brand-500)';
 
@@ -17,7 +23,7 @@ function encodeBase64Utf8(str: string): string {
   const bytes = new TextEncoder().encode(str);
   let binary = '';
   for (let i = 0; i < bytes.length; i += 1) {
-    binary += String.fromCharCode(bytes[i]);
+    binary += String.fromCharCode(bytes[i]!);
   }
   return btoa(binary);
 }
@@ -83,19 +89,29 @@ export function decodeShareLink(
       encoded = input.searchParams.get(SHARE_QUERY_KEY);
     }
     if (!encoded) return null;
+    if (encoded.length > DECODE_MAX_ENCODED_LENGTH) return null;
 
     const data = JSON.parse(decodeBase64Utf8(encoded)) as Partial<DecisionShareData>;
     if (!data || !Array.isArray(data.options) || typeof data.result !== 'string') {
       return null;
     }
 
+    if (data.options.length > DECODE_MAX_OPTIONS) return null;
+    if (data.result.length > DECODE_MAX_RESULT_LENGTH) return null;
+
     const options = data.options.filter(
       (o): o is Pick<Option, 'text' | 'color'> =>
         o != null && typeof o.text === 'string' && typeof o.color === 'string',
     );
 
+    // Truncate option text to prevent oversized canvas rendering.
+    const safeOptions = options.map((o) => ({
+      text: o.text.slice(0, DECODE_MAX_TEXT_LENGTH),
+      color: o.color,
+    }));
+
     return {
-      options,
+      options: safeOptions,
       result: data.result,
       resultColor:
         typeof data.resultColor === 'string' ? data.resultColor : FALLBACK_RESULT_COLOR,

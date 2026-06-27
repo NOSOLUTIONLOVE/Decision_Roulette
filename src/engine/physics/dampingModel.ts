@@ -5,6 +5,13 @@ const STOP_THRESHOLD = 0.05; // rad/s
 const BASE_FRICTION = 0.985; // per frame at 60fps
 const FRAME_TIME = 16.67; // ms, normalized to 60fps
 
+// 转盘物理参数 — 集中管理便于调参
+const MIN_BASE_OMEGA = 8; // rad/s，无蓄力时的最低初始角速度
+const MAX_BASE_OMEGA = 15; // rad/s，无蓄力时的最高初始角速度
+const CHARGE_BONUS_RATIO = 0.5; // 蓄力满时额外 +50% 角速度
+const MIN_ROTATIONS = 3; // 最少转 3 圈，保证体感「真的转了」
+const MAX_ROTATIONS = 8; // 最多转 8 圈，避免转太久让用户等待
+
 export interface DampingState {
   omega: number;
   angle: number;
@@ -15,8 +22,8 @@ export interface DampingState {
 
 /** Create initial spin state with random velocity + charge bonus */
 export function createSpinState(chargeRatio: number): DampingState {
-  const baseOmega = randomBetween(8, 15); // rad/s
-  const chargeBonus = 1 + chargeRatio * 0.5; // up to +50%
+  const baseOmega = randomBetween(MIN_BASE_OMEGA, MAX_BASE_OMEGA);
+  const chargeBonus = 1 + chargeRatio * CHARGE_BONUS_RATIO;
   const initialOmega = baseOmega * chargeBonus;
 
   return {
@@ -33,7 +40,12 @@ function computeFriction(_state: DampingState, _targetRotations: number): number
   return BASE_FRICTION;
 }
 
-/** Update the physics state by one frame */
+/**
+ * Update the physics state by one frame.
+ *
+ * 原地更新传入的 state 对象以避免每帧分配新对象造成的 GC 压力
+ * （60fps × 数秒 = 数百次分配）。调用方仍可使用返回值，但其底层与入参同引用。
+ */
 export function updatePhysics(
   state: DampingState,
   dt: number,
@@ -49,22 +61,16 @@ export function updatePhysics(
   // Update angle (convert to per-frame movement)
   // omega is in rad/s, dt is in ms
   const deltaAngle = newOmega * (dt / 1000);
-  const newAngle = state.angle + deltaAngle;
-  const newTotalAngle = state.totalAngle + Math.abs(deltaAngle);
+  state.angle = state.angle + deltaAngle;
+  state.totalAngle = state.totalAngle + Math.abs(deltaAngle);
 
   // Count rotations
-  const newRotations = newTotalAngle / TWO_PI;
+  state.rotationsDone = state.totalAngle / TWO_PI;
 
   // Check stop
-  const finalOmega = newOmega < STOP_THRESHOLD ? 0 : newOmega;
+  state.omega = newOmega < STOP_THRESHOLD ? 0 : newOmega;
 
-  return {
-    omega: finalOmega,
-    angle: newAngle,
-    initialOmega: state.initialOmega,
-    rotationsDone: newRotations,
-    totalAngle: newTotalAngle,
-  };
+  return state;
 }
 
 /** Check if the wheel has stopped */
@@ -90,7 +96,6 @@ export function estimateRotations(initialOmega: number): number {
 export function adjustForConstraints(
   targetRotations: number,
 ): { targetRotations: number; needsBoost: boolean } {
-  // Min 3 rotations, max 8
-  const adjusted = clamp(targetRotations, 3, 8);
+  const adjusted = clamp(targetRotations, MIN_ROTATIONS, MAX_ROTATIONS);
   return { targetRotations: adjusted, needsBoost: adjusted !== targetRotations };
 }

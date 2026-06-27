@@ -14,7 +14,10 @@ export function OptionsInput() {
   const [shaking, setShaking] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const shakeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { options, addOption, addOptionsBulk } = useWheelStore();
+  const options = useWheelStore((s) => s.options);
+  const addOption = useWheelStore((s) => s.addOption);
+  const addOptionsBulk = useWheelStore((s) => s.addOptionsBulk);
+  const phase = useWheelStore((s) => s.phase);
   const t = useLocaleStore((s) => s.t);
 
   // 卸载时清理 shake 动画定时器，避免 setState on unmounted
@@ -29,6 +32,8 @@ export function OptionsInput() {
   const handleAdd = useCallback(() => {
     const trimmed = text.trim();
     if (!trimmed) return;
+    // 转动期间禁止编辑：避免删除/新增打乱扇区映射
+    if (phase !== 'idle') return;
 
     // Check for duplicates (case-insensitive)
     const exists = options.some(
@@ -46,10 +51,16 @@ export function OptionsInput() {
     // Support multi-line paste: split by newlines
     const lines = trimmed.split('\n').filter((l) => l.trim());
     if (lines.length > 1) {
+      // 同行去重：用 Set 跟踪本次粘贴中已见文本，避免 "foo\nfoo\nfoo" 注入 3 个相同项
+      const seenInPaste = new Set<string>();
       const items = lines
         .filter((l) => {
-          const lt = l.trim();
-          return lt && !options.some((o) => o.text.trim().toLowerCase() === lt.toLowerCase());
+          const lt = l.trim().toLowerCase();
+          if (!lt) return false;
+          if (seenInPaste.has(lt)) return false;
+          if (options.some((o) => o.text.trim().toLowerCase() === lt)) return false;
+          seenInPaste.add(lt);
+          return true;
         })
         .slice(0, MAX_OPTIONS - options.length)
         .map((l, i) => ({ text: l.trim(), color: assignColor(options.length + i) }));
@@ -61,7 +72,7 @@ export function OptionsInput() {
     haptics.light();
     setText('');
     inputRef.current?.focus();
-  }, [text, options, addOption, addOptionsBulk]);
+  }, [text, options, phase, addOption, addOptionsBulk]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -71,6 +82,8 @@ export function OptionsInput() {
   };
 
   const isMaxed = options.length >= MAX_OPTIONS;
+  // 转动期间禁用输入与添加按钮
+  const isLocked = phase !== 'idle';
 
   return (
     <div>
@@ -95,14 +108,14 @@ export function OptionsInput() {
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={isMaxed ? t('options.input.placeholderMaxed') : t('options.input.placeholder')}
-          disabled={isMaxed}
+          disabled={isMaxed || isLocked}
           className="h-11 lg:h-12 flex-1 bg-transparent px-3 text-[15px] lg:text-[16px] text-[var(--color-ink-800)] placeholder:text-[var(--color-ink-400)] focus:outline-none disabled:cursor-not-allowed"
           style={{ fontFamily: 'var(--font-body)', fontStyle: 'italic' }}
         />
         <button
           type="button"
           onClick={handleAdd}
-          disabled={!text.trim() || isMaxed}
+          disabled={!text.trim() || isMaxed || isLocked}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-500)] text-white transition-[transform,background-color] hover:scale-[1.04] hover:bg-[var(--color-brand-600)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:scale-100"
           style={{ boxShadow: '0 1px 3px rgba(201,100,66,0.25)' }}
           aria-label={t('options.input.add')}

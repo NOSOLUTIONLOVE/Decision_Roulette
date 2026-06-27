@@ -74,12 +74,14 @@ describe('dampingModel', () => {
         rotationsDone: 0,
         totalAngle: 0,
       }
+      const initialOmega = initial.omega
       const targetRotations = 5
       const next = updatePhysics(initial, FRAME_TIME, targetRotations)
       // 远未到末端（remainingRotations=5-0=5 > 2），friction=0.985
       // dtFrames = 16.67/16.67 = 1，newOmega = 10 * 0.985 = 9.85
       expect(next.omega).toBeCloseTo(9.85, 5)
-      expect(next.omega).toBeLessThan(initial.omega)
+      // 注：updatePhysics 现在原地修改 state（#36），所以用捕获的 initialOmega 比较
+      expect(next.omega).toBeLessThan(initialOmega)
     })
 
     it('多帧累积后 omega 持续衰减', () => {
@@ -98,9 +100,9 @@ describe('dampingModel', () => {
       }
       // 每一步都不应大于上一步（在还未触发停止阈值前）
       for (let i = 1; i < omegas.length; i += 1) {
-        expect(omegas[i]).toBeLessThanOrEqual(omegas[i - 1])
+        expect(omegas[i]!).toBeLessThanOrEqual(omegas[i - 1]!)
       }
-      expect(omegas[omegas.length - 1]).toBeLessThan(omegas[0])
+      expect(omegas[omegas.length - 1]!).toBeLessThan(omegas[0]!)
     })
 
     it('角度按 newOmega * dt/1000 递增', () => {
@@ -211,15 +213,17 @@ describe('dampingModel', () => {
 
   describe('updatePhysics - 时间步进', () => {
     it('较大的 dt 应用更多次摩擦（omega 衰减更快）', () => {
-      const base: DampingState = {
-        omega: 10,
-        angle: 0,
-        initialOmega: 10,
-        rotationsDone: 0,
-        totalAngle: 0,
-      }
-      const small = updatePhysics(base, FRAME_TIME, 5) // 1 帧
-      const large = updatePhysics(base, FRAME_TIME * 3, 5) // 3 帧
+      // 注：updatePhysics 原地修改 state（#36），每次需独立构造
+      const small = updatePhysics(
+        { omega: 10, angle: 0, initialOmega: 10, rotationsDone: 0, totalAngle: 0 },
+        FRAME_TIME,
+        5,
+      ) // 1 帧
+      const large = updatePhysics(
+        { omega: 10, angle: 0, initialOmega: 10, rotationsDone: 0, totalAngle: 0 },
+        FRAME_TIME * 3,
+        5,
+      ) // 3 帧
       // 1 帧：10 * 0.985^1 = 9.85
       // 3 帧：10 * 0.985^3 ≈ 9.5567
       expect(large.omega).toBeLessThan(small.omega)
@@ -228,15 +232,17 @@ describe('dampingModel', () => {
     })
 
     it('角度增量正比于 dt', () => {
-      const base: DampingState = {
-        omega: 10,
-        angle: 0,
-        initialOmega: 10,
-        rotationsDone: 0,
-        totalAngle: 0,
-      }
-      const t1 = updatePhysics(base, FRAME_TIME, 5)
-      const t2 = updatePhysics(base, FRAME_TIME * 2, 5)
+      // 注：updatePhysics 原地修改 state（#36），每次需独立构造
+      const t1 = updatePhysics(
+        { omega: 10, angle: 0, initialOmega: 10, rotationsDone: 0, totalAngle: 0 },
+        FRAME_TIME,
+        5,
+      )
+      const t2 = updatePhysics(
+        { omega: 10, angle: 0, initialOmega: 10, rotationsDone: 0, totalAngle: 0 },
+        FRAME_TIME * 2,
+        5,
+      )
       // t2 走了 2 倍时间，虽然 omega 不同（摩擦更多），但角度增量应明显更大
       expect(t2.totalAngle).toBeGreaterThan(t1.totalAngle)
     })

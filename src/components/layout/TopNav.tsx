@@ -7,8 +7,10 @@ import { audioEngine } from '@/engine/audio/audioEngine';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
 export function TopNav() {
-  const { setHistoryOpen, setSettingsOpen } = useUIStore();
-  const { muted, setMuted } = useSettingsStore();
+  const setHistoryOpen = useUIStore((s) => s.setHistoryOpen);
+  const setSettingsOpen = useUIStore((s) => s.setSettingsOpen);
+  const muted = useSettingsStore((s) => s.muted);
+  const setMuted = useSettingsStore((s) => s.setMuted);
   const t = useLocaleStore((s) => s.t);
 
   // Sync audio engine mute state with persisted settings on mount / external changes.

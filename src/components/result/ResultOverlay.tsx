@@ -8,8 +8,10 @@ import { ParticleCanvas } from './ParticleCanvas';
 export function ResultOverlay() {
   const result = useWheelStore((s) => s.result);
   const phase = useWheelStore((s) => s.phase);
-  const { resultOpen, setResultOpen, closeAll } = useUIStore();
-  const reset = useWheelStore((s) => s.reset);
+  const resultOpen = useUIStore((s) => s.resultOpen);
+  const setResultOpen = useUIStore((s) => s.setResultOpen);
+  const closeAll = useUIStore((s) => s.closeAll);
+  const resetSpin = useWheelStore((s) => s.resetSpin);
   const t = useLocaleStore((s) => s.t);
 
   // Open overlay when result is available
@@ -25,25 +27,25 @@ export function ResultOverlay() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         closeAll();
-        reset();
+        resetSpin();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [resultOpen, closeAll, reset]);
+  }, [resultOpen, closeAll, resetSpin]);
 
   if (!resultOpen || !result) return null;
 
   const handleSpinAgain = () => {
     closeAll();
-    reset();
+    resetSpin();
   };
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // 仅点击 backdrop 本身（非内部卡片）才关闭
     if (e.target === e.currentTarget) {
       closeAll();
-      reset();
+      resetSpin();
     }
   };
 

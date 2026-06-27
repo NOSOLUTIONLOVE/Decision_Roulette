@@ -13,26 +13,11 @@ import { useWheelStore } from '@/store/useWheelStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useLocaleStore } from '@/store/useLocaleStore';
 import { encodeShareLink } from '@/lib/shareLink';
+import { copyToClipboard } from '@/lib/clipboard';
 import { cn } from '@/lib/utils';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 type BusyKind = 'image' | 'link' | 'social' | null;
-
-/** Copy text to the clipboard, degrading to a hidden textarea when needed. */
-async function copyToClipboard(text: string): Promise<void> {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text);
-    return;
-  }
-  const textarea = document.createElement('textarea');
-  textarea.value = text;
-  textarea.style.position = 'fixed';
-  textarea.style.opacity = '0';
-  document.body.appendChild(textarea);
-  textarea.select();
-  document.execCommand('copy');
-  document.body.removeChild(textarea);
-}
 
 /**
  * ShareSheet — bottom sheet for sharing the current decision.
