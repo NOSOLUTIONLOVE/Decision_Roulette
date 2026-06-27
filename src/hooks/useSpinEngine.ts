@@ -17,7 +17,10 @@ const RESULT_REVEAL_DELAY_MS = 200; // 停止后延迟 200ms 再开始闪烁
 const RESULT_FLASH_COUNT = 3; // 扇区高亮闪烁 3 次
 const RESULT_FLASH_STEP_MS = 100; // 单步 100ms：100ms 关 + 100ms 开 = 200ms/次
 
-export function useSpinEngine(canvasRef: React.RefObject<HTMLCanvasElement | null>) {
+export function useSpinEngine(
+  canvasRef: React.RefObject<HTMLCanvasElement | null>,
+  onAngleUpdate?: (angle: number) => void,
+) {
   // 拆分为独立 selector：避免订阅整个 store 导致 chargeRatio 等无关字段变化时也重渲染
   const options = useWheelStore((s) => s.options);
   const phase = useWheelStore((s) => s.phase);
@@ -89,6 +92,8 @@ export function useSpinEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
             if (canvasRef.current) {
               canvasRef.current.style.transform = `rotateZ(${angle}rad)`;
             }
+            // 同步通知父组件（如 WheelStage）以更新 DOM 文字覆盖层位置
+            onAngleUpdate?.(angle);
           },
           onSectorCross: (_sectorIndex: number, speedRatio: number) => {
             audioEngine.playClick(speedRatio);
@@ -171,8 +176,9 @@ export function useSpinEngine(canvasRef: React.RefObject<HTMLCanvasElement | nul
     if (phase === 'idle' && canvasRef.current) {
       angleRef.current = 0;
       canvasRef.current.style.transform = '';
+      onAngleUpdate?.(0);
     }
-  }, [options, phase, canvasRef]);
+  }, [options, phase, canvasRef, onAngleUpdate]);
 
   return { startSpin, phase };
 }
