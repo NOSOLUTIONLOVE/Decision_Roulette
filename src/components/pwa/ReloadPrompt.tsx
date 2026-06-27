@@ -7,6 +7,7 @@ export function ReloadPrompt() {
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     offlineReady: [offlineReady, setOfflineReady],
+    updateServiceWorker,
   } = useRegisterSW();
 
   const [closed, setClosed] = useState(false);
@@ -42,7 +43,8 @@ export function ReloadPrompt() {
           <button
             onClick={() => {
               setNeedRefresh(false);
-              location.reload();
+              // 先通知 waiting SW skipWaiting，再 reload；避免 reload 后仍命中旧 SW 缓存
+              updateServiceWorker(true);
             }}
             className="rounded-[var(--radius-sm)] bg-[var(--color-brand-500)] px-4 py-1.5 text-[12px] text-white"
             style={{ fontFamily: 'var(--font-ui)' }}

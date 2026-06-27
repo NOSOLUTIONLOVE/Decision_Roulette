@@ -26,6 +26,12 @@ export const config = {
 /** 承载编码 payload 的查询参数名（与 shareLink.ts 保持一致）。 */
 const SHARE_QUERY_KEY = 'd';
 
+/** 编码 payload 长度上限——防止 Edge 函数内存峰值/成本放大。 */
+const MAX_ENCODED_LENGTH = 4096;
+
+/** 注入到 OG title 的 result 文本截断上限。 */
+const MAX_RESULT_LENGTH = 200;
+
 /** 默认 OG 图（静态）。TODO: 后续替换为动态 api/og-image.ts 生成结果。 */
 const DEFAULT_OG_IMAGE = '/og-default.svg';
 
@@ -67,6 +73,7 @@ function decodeSharePayload(encoded: string): DecodedShare | null {
 /** 转义字符串以安全嵌入 HTML 双引号属性。 */
 function escapeHtmlAttr(value: string): string {
   return value
+    .replace(/\u0000/g, '')
     .replace(/&/g, '&amp;')
     .replace(/"/g, '&quot;')
     .replace(/</g, '&lt;')
@@ -125,11 +132,21 @@ async function fetchIndexHtml(request: Request): Promise<string | null> {
 export default async function handler(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const encoded = url.searchParams.get(SHARE_QUERY_KEY);
+
+  // 大小限制：防止 atob 内存峰值 / 成本放大。
+  if (encoded && encoded.length > MAX_ENCODED_LENGTH) {
+    return new Response('Payload Too Large', { status: 413 });
+  }
+
   const decoded = encoded ? decodeSharePayload(encoded) : null;
 
   const html = await fetchIndexHtml(request);
   if (html === null) {
-    return new Response('Internal Server Error', { status: 500 });
+    // 降级：返回最小静态 HTML 壳，至少让爬虫拿到默认 OG 标签而非 500。
+    return new Response(
+      '<!DOCTYPE html><html><head><meta property="og:title" content="命运之轮"><meta property="og:description" content="用了命运之轮，替我做了选择。"></head><body></body></html>',
+      { headers: HTML_HEADERS },
+    );
   }
 
   // 无 d 参数或解码失败：直接返回原始 index.html（默认 meta），不做替换。
@@ -138,7 +155,8 @@ export default async function handler(request: Request): Promise<Response> {
   }
 
   const fullUrl = url.toString();
-  const ogTitle = `命运替我决定了：${decoded.result}`;
+  const safeResult = decoded.result.slice(0, MAX_RESULT_LENGTH);
+  const ogTitle = `命运替我决定了：${safeResult}`;
 
   let out = html;
   out = replaceTagAttribute(out, 'meta', 'property', 'og:title', 'content', ogTitle);

@@ -18,8 +18,10 @@ export function useFocusTrap<T extends HTMLElement>(active: boolean) {
     const container = containerRef.current;
     if (!container) return;
 
-    // 保存当前焦点
-    previousFocusRef.current = document.activeElement as HTMLElement;
+    // 保存当前焦点（activeElement 可能是 null 或非 HTMLElement，如 <body>）
+    const previouslyFocused = document.activeElement;
+    previousFocusRef.current =
+      previouslyFocused instanceof HTMLElement ? previouslyFocused : null;
 
     // 延迟一帧聚焦首个可聚焦元素，确保动态内容已渲染
     const rafId = requestAnimationFrame(() => {
@@ -34,6 +36,7 @@ export function useFocusTrap<T extends HTMLElement>(active: boolean) {
       if (focusable.length === 0) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
+      if (!first || !last) return;
 
       if (e.shiftKey && document.activeElement === first) {
         e.preventDefault();

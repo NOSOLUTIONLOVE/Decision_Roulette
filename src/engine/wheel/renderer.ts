@@ -58,7 +58,7 @@ export class WheelRenderer {
       ctx.moveTo(cx, cy);
       ctx.arc(cx, cy, radius, 0, Math.PI * 2);
       ctx.closePath();
-      ctx.fillStyle = resolveColor(options[0].color);
+      ctx.fillStyle = resolveColor(options[0]!.color);
       ctx.globalAlpha = 0.4;
       ctx.fill();
       ctx.globalAlpha = 1;

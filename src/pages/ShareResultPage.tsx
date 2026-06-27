@@ -8,37 +8,18 @@ import {
   House,
   Sparkles,
   LoaderCircle,
-  Smartphone,
 } from 'lucide-react';
 import type { Option, DecisionShareData } from '@/types';
 import type { WheelConfig } from '@/types/engine';
 import { WheelRenderer } from '@/engine/wheel/renderer';
 import { decodeShareLink } from '@/lib/shareLink';
+import { copyToClipboard } from '@/lib/clipboard';
 import { ShareCardRenderer } from '@/engine/share/cardRenderer';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useLocaleStore } from '@/store/useLocaleStore';
-
-/** Minimal shape of the `beforeinstallprompt` event (not in lib.dom yet). */
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
-
-/** Copy text to the clipboard, degrading to a hidden textarea when needed. */
-async function copyToClipboard(text: string): Promise<void> {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text);
-    return;
-  }
-  const textarea = document.createElement('textarea');
-  textarea.value = text;
-  textarea.style.position = 'fixed';
-  textarea.style.opacity = '0';
-  document.body.appendChild(textarea);
-  textarea.select();
-  document.execCommand('copy');
-  document.body.removeChild(textarea);
-}
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { useBeforeInstallPrompt } from '@/hooks/useBeforeInstallPrompt';
+import { InstallGuide } from '@/components/share/InstallGuide';
 
 /** Static share-result page mounted at `/share?d=…`. */
 export default function ShareResultPage() {
@@ -48,15 +29,14 @@ export default function ShareResultPage() {
   const t = useLocaleStore((s) => s.t);
 
   const [data, setData] = useState<DecisionShareData | null>(null);
-  const [cssSize, setCssSize] = useState<number>(300);
   const [invalid, setInvalid] = useState(false);
 
   const [busyImage, setBusyImage] = useState(false);
   const [copied, setCopied] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
 
-  const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
-  const [installed, setInstalled] = useState(false);
+  const cssSize = useResponsiveSize(wheelContainerRef, 'width');
+  const { installEvent, installed, promptInstall } = useBeforeInstallPrompt();
 
   const canShare =
     typeof navigator !== 'undefined' && typeof navigator.share === 'function';
@@ -72,57 +52,9 @@ export default function ShareResultPage() {
     setData(decoded);
   }, [params]);
 
-  /* ---- Capture the PWA install prompt ---- */
-  useEffect(() => {
-    const onBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setInstallEvent(e as BeforeInstallPromptEvent);
-    };
-    const onInstalled = () => {
-      setInstalled(true);
-      setInstallEvent(null);
-    };
-    window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt);
-    window.addEventListener('appinstalled', onInstalled);
-    return () => {
-      window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', onInstalled);
-    };
-  }, []);
-
-  /* ---- Track wheel container width for responsive canvas sizing ---- */
-  useEffect(() => {
-    const el = wheelContainerRef.current;
-    if (!el || typeof ResizeObserver === 'undefined') return;
-
-    let rafId = 0;
-    const measure = (entries: ResizeObserverEntry[]) => {
-      rafId = 0;
-      const entry = entries[0];
-      const w = entry?.contentRect.width ?? 0;
-      if (w <= 0) return;
-      const next = Math.floor(w);
-      if (next > 0) {
-        setCssSize((prev) => (prev === next ? prev : next));
-      }
-    };
-
-    const ro = new ResizeObserver((entries) => {
-      if (rafId === 0) {
-        rafId = requestAnimationFrame(() => measure(entries));
-      }
-    });
-    ro.observe(el);
-
-    return () => {
-      ro.disconnect();
-      if (rafId !== 0) cancelAnimationFrame(rafId);
-    };
-  }, []);
-
   /* ---- Render the static wheel once data + fonts are ready ---- */
   useEffect(() => {
-    if (!data) return;
+    if (!data || cssSize <= 0) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -175,7 +107,7 @@ export default function ShareResultPage() {
     return () => {
       cancelled = true;
     };
-  }, [data, cssSize]);
+  }, [data, cssSize, t]);
 
   const handleSaveImage = async () => {
     if (!data || busyImage) return;
@@ -228,17 +160,6 @@ export default function ShareResultPage() {
         setShareError(t('shareResult.socialFail'));
       }
     }
-  };
-
-  const handleInstall = async () => {
-    if (!installEvent) return;
-    try {
-      await installEvent.prompt();
-      await installEvent.userChoice;
-    } catch {
-      /* user dismissed or prompt unavailable */
-    }
-    setInstallEvent(null);
   };
 
   /* ---- Invalid link state ---- */
@@ -388,52 +309,11 @@ export default function ShareResultPage() {
       )}
 
       {/* PWA install guide */}
-      <section className="mt-10 rounded-[var(--radius-lg)] border border-[var(--color-line-300)] bg-[var(--color-paper-200)] p-6">
-        <div className="mb-4 flex items-center gap-3">
-          <Smartphone size={18} className="text-[var(--color-brand-500)]" strokeWidth={1.5} />
-          <h3
-            className="text-[14px] font-medium text-[var(--color-ink-800)]"
-            style={{ fontFamily: 'var(--font-ui)' }}
-          >
-            {t('shareResult.installTitle')}
-          </h3>
-        </div>
-
-        {installed ? (
-          <p
-            className="text-[12px] text-[var(--color-success)]"
-            style={{ fontFamily: 'var(--font-body)' }}
-          >
-            {t('shareResult.installed')}
-          </p>
-        ) : installEvent ? (
-          <button
-            type="button"
-            onClick={handleInstall}
-            className="w-full rounded-[var(--radius-md)] bg-[var(--color-brand-500)] px-5 py-3.5 text-[13px] text-white transition-colors hover:bg-[var(--color-brand-600)]"
-            style={{ fontFamily: 'var(--font-ui)' }}
-          >
-            {t('shareResult.installNow')}
-          </button>
-        ) : (
-          <div
-            className="space-y-3 text-[12px] leading-relaxed text-[var(--color-ink-600)]"
-            style={{ fontFamily: 'var(--font-body)' }}
-          >
-            <p>
-              <span className="font-medium text-[var(--color-ink-800)]">{t('shareResult.iosLabel')}</span>
-              {t('shareResult.iosGuide')}
-            </p>
-            <p>
-              <span className="font-medium text-[var(--color-ink-800)]">{t('shareResult.androidLabel')}</span>
-              {t('shareResult.androidGuide')}
-            </p>
-            <p className="text-[var(--color-ink-500)]" style={{ fontStyle: 'italic' }}>
-              {t('shareResult.installHint')}
-            </p>
-          </div>
-        )}
-      </section>
+      <InstallGuide
+        installed={installed}
+        canPrompt={installEvent !== null}
+        onInstall={promptInstall}
+      />
 
       {/* CTA */}
       <Link

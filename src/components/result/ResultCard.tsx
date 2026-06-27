@@ -20,7 +20,7 @@ const fadeUpStyle = (delay: number) => ({
 export function ResultCard({ onSpinAgain }: ResultCardProps) {
   const result = useWheelStore((s) => s.result);
   const options = useWheelStore((s) => s.options);
-  const { setShareOpen } = useUIStore();
+  const setShareOpen = useUIStore((s) => s.setShareOpen);
   const addToast = useToastStore((s) => s.addToast);
   const t = useLocaleStore((s) => s.t);
   const [saved, setSaved] = useState(false);

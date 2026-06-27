@@ -94,19 +94,21 @@ describe('shareLink', () => {
     })
 
     it('超长文本：较长 payload 仍能成功编码并往返', () => {
-      // 单个选项 + 600 字符 ASCII 长文本。
-      // URL 前缀 http://localhost/share?d= 约 24 字符，base64 部分约 1700 字符，
-      // 总 URL ~1730 字符，仍低于 2000 上限。
-      const longText = 'A'.repeat(600)
+      // 单个选项 + 150 字符 ASCII 长文本（decode 限制 result <= 200、option.text 截断到 100）。
+      // URL 前缀 http://localhost/share?d= 约 24 字符，base64 部分约 500 字符，
+      // 总 URL ~530 字符，低于 2000 上限。
+      const longText = 'A'.repeat(150)
       const options: Pick<Option, 'text' | 'color'>[] = [
         { text: longText, color: '#000000' },
       ]
       const url = encodeShareLink(options, longText)
       expect(url.length).toBeLessThanOrEqual(getShareMaxLength())
-      expect(url.length).toBeGreaterThan(1000) // 确实是长文本
+      expect(url.length).toBeGreaterThan(300) // 确实是长文本
       const decoded = decodeShareLink(url)
       expect(decoded).not.toBeNull()
-      expect(decoded!.options[0].text).toBe(longText)
+      // option.text 被 decode 截断到 100 字符
+      expect(decoded!.options[0]!.text).toBe('A'.repeat(100))
+      // result 不截断（150 < 200）
       expect(decoded!.result).toBe(longText)
     })
 
@@ -139,7 +141,7 @@ describe('shareLink', () => {
       const url = encodeShareLink(options, '唯一选项')
       const decoded = decodeShareLink(url)
       expect(decoded!.options).toHaveLength(1)
-      expect(decoded!.options[0].text).toBe('唯一选项')
+      expect(decoded!.options[0]!.text).toBe('唯一选项')
       expect(decoded!.result).toBe('唯一选项')
       expect(decoded!.resultColor).toBe('#abcdef')
     })
@@ -152,7 +154,7 @@ describe('shareLink', () => {
       const url = encodeShareLink(options, '选项10')
       const decoded = decodeShareLink(url)
       expect(decoded!.options).toHaveLength(20)
-      expect(decoded!.options[9].text).toBe('选项10')
+      expect(decoded!.options[9]!.text).toBe('选项10')
       expect(decoded!.result).toBe('选项10')
     })
   })

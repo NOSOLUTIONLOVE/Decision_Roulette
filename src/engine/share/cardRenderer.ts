@@ -315,8 +315,8 @@ export class ShareCardRenderer {
     ctx.textAlign = 'left';
     let cursor = x - total / 2;
     for (let i = 0; i < chars.length; i += 1) {
-      ctx.fillText(chars[i], cursor, y);
-      cursor += widths[i] + spacing;
+      ctx.fillText(chars[i]!, cursor, y);
+      cursor += (widths[i] ?? 0) + spacing;
     }
     ctx.textAlign = prevAlign;
   }
@@ -438,7 +438,7 @@ export class ShareCardRenderer {
 
   private dataUrlToBlob(dataUrl: string): Blob {
     const [meta, base64] = dataUrl.split(',');
-    const mime = meta.match(/data:(.*?);/)?.[1] ?? 'image/png';
+    const mime = meta?.match(/data:(.*?);/)?.[1] ?? 'image/png';
     const binary = atob(base64 ?? '');
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i += 1) {

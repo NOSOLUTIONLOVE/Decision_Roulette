@@ -17,5 +17,8 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run lint
+      # 类型检查独立于 build，确保 PR 不引入类型回归（build 阶段 tsc -b 会被 vite build 掩盖错误）
+      # 使用 tsc -b 跟随 references 检查 tsconfig.app/node.json；根 tsconfig 的 files:[] 使 tsc --noEmit 实际不检查任何文件
+      - run: npx tsc -b
       - run: npm run test
       - run: npm run build

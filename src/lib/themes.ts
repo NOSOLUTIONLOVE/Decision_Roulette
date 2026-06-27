@@ -1,55 +1,5 @@
 import type { ThemeDef } from '@/types';
 
-/**
- * 通过模块扩展为 ThemeDef 增补完整 CSS 变量字段。
- * globals.css 的 :root（@theme）中定义了 40+ 个色彩变量，
- * 原 ThemeDef 仅以语义化别名（bg / brand / textPrimary 等）覆盖 11 个，
- * 切换深色主题时大量 UI 元素仍使用浅色值；
- * 在此按 CSS 变量命名补全整套色阶字段，applyTheme 直接消费这些字段。
- */
-declare module '@/types' {
-  interface ThemeDef {
-    // ink 色阶（全套 50~900）
-    ink50: string;
-    ink100: string;
-    ink200: string;
-    ink300: string;
-    ink400: string;
-    ink500: string;
-    ink600: string;
-    ink700: string;
-    ink800: string;
-    ink900: string;
-    // paper 色阶（全套 50~500）
-    paper50: string;
-    paper100: string;
-    paper200: string;
-    paper300: string;
-    paper400: string;
-    paper500: string;
-    // line 色阶（全套 200~500）
-    line200: string;
-    line300: string;
-    line400: string;
-    line500: string;
-    // brand 色阶（全套 50~900）
-    brand50: string;
-    brand100: string;
-    brand200: string;
-    brand300: string;
-    brand400: string;
-    brand500: string;
-    brand600: string;
-    brand700: string;
-    brand800: string;
-    brand900: string;
-    // 状态色
-    success: string;
-    error: string;
-    warning: string;
-  }
-}
-
 /** 默认暖纸编辑主题（沿用 globals.css 中 :root 的原始值） */
 const editorial: ThemeDef = {
   id: 'editorial',

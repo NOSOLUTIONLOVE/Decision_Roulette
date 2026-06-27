@@ -30,9 +30,8 @@ export function useCharging(
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasReleasedRef = useRef(false);
 
-  useEffect(() => {
-    chargingRef.current = charging;
-  }, [charging]);
+  // chargingRef 必须在 setCharging 调用点同步赋值，不再用 useEffect 同步，
+  // 否则多触摸守卫在 setCharging(true) 与 effect 提交之间存在一帧窗口可被第二根手指穿透。
   const phase = useWheelStore((s) => s.phase);
   const setPhase = useWheelStore((s) => s.setPhase);
 
@@ -81,6 +80,8 @@ export function useCharging(
 
   const beginLongPress = useCallback(() => {
     timeoutRef.current = null;
+    // 同步置位 ref，确保多触摸守卫立即生效，不依赖 effect 提交时机
+    chargingRef.current = true;
     setCharging(true);
     setPhase('charging');
     applyChargeToDOM(0);
@@ -95,6 +96,9 @@ export function useCharging(
 
   const start = useCallback(() => {
     if (phase !== 'idle') return;
+    // 多触摸守卫：若已有指针在按下态（短按等待中或已进入蓄力），忽略后续 pointerdown，
+    // 防止第二根手指重置 startTimeRef 并触发重复 onRelease。
+    if (timeoutRef.current !== null || chargingRef.current) return;
 
     hasReleasedRef.current = false;
     startTimeRef.current = performance.now();
@@ -125,6 +129,8 @@ export function useCharging(
     audioEngine.stopCharge();
 
     if (chargingRef.current) {
+      // 同步复位 ref，与 setCharging(false) 一起清理，避免 effect 延迟
+      chargingRef.current = false;
       setCharging(false);
       // 长按蓄力松开，根据蓄力时间返回 0-50% 加成
       onRelease(ratio);

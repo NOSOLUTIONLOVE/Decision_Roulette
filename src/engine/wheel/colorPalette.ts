@@ -13,7 +13,7 @@ const WHEEL_COLORS = [
 
 /** Assign colors to options, cycling through the wheel palette */
 export function assignColor(index: number): string {
-  return WHEEL_COLORS[index % WHEEL_COLORS.length];
+  return WHEEL_COLORS[index % WHEEL_COLORS.length] ?? WHEEL_COLORS[0]!;
 }
 
 /** Get the list of wheel color CSS variables */

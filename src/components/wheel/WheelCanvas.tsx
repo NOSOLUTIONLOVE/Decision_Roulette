@@ -1,9 +1,10 @@
-import { useRef, useEffect, useCallback, useState } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { WheelRenderer } from '@/engine/wheel/renderer';
 import { useWheelStore } from '@/store/useWheelStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useLocaleStore } from '@/store/useLocaleStore';
 import { getTheme } from '@/lib/themes';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import type { WheelConfig } from '@/types/engine';
 
 interface WheelCanvasProps {
@@ -25,40 +26,9 @@ export function WheelCanvas({ canvasRef }: WheelCanvasProps) {
   // Track the size last passed to the renderer so we can rebuild it when cssSize changes.
   const renderedSizeRef = useRef<number>(0);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [cssSize, setCssSize] = useState<number>(DEFAULT_CSS_SIZE);
-
-  // Observe the wheel container and update the canvas display size responsively.
-  // The wheel is square — pick min(contentWidth, contentHeight) of the padded container.
-  // rAF throttling avoids redundant state updates inside high-frequency resize callbacks.
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el || typeof ResizeObserver === 'undefined') return;
-
-    let rafId = 0;
-    const measure = (entries: ResizeObserverEntry[]) => {
-      rafId = 0;
-      const entry = entries[0];
-      const w = entry?.contentRect.width ?? 0;
-      const h = entry?.contentRect.height ?? 0;
-      if (w <= 0 || h <= 0) return;
-      const next = Math.floor(Math.min(w, h));
-      if (next > 0) {
-        setCssSize((prev) => (prev === next ? prev : next));
-      }
-    };
-
-    const ro = new ResizeObserver((entries) => {
-      if (rafId === 0) {
-        rafId = requestAnimationFrame(() => measure(entries));
-      }
-    });
-    ro.observe(el);
-
-    return () => {
-      ro.disconnect();
-      if (rafId !== 0) cancelAnimationFrame(rafId);
-    };
-  }, []);
+  // 正方形轮盘：取容器 min(width, height)，初始用默认值避免首次渲染空白
+  const measured = useResponsiveSize(containerRef, 'min');
+  const cssSize = measured > 0 ? measured : DEFAULT_CSS_SIZE;
 
   // Draw wheel when options, theme, text size, or css size change
   const draw = useCallback(() => {

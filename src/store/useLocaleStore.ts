@@ -1,12 +1,13 @@
 import { create } from 'zustand';
-import { type Locale, DEFAULT_LOCALE, LOCALE_STORAGE_KEY, translations, interpolate } from '@/lib/i18n';
+import { type Locale, type TranslationKey, DEFAULT_LOCALE, LOCALE_STORAGE_KEY, translations, interpolate } from '@/lib/i18n';
 
 interface LocaleState {
   locale: Locale;
   setLocale: (locale: Locale) => void;
   toggleLocale: () => void;
-  /** 翻译函数：读取当前语言字典，缺失时回退中文，再缺失返回 key 本身 */
-  t: (key: string, params?: Record<string, string | number>) => string;
+  /** 翻译函数：读取当前语言字典，缺失时回退中文，再缺失返回 key 本身。
+   *  key 类型为 TranslationKey，编译期校验拼写；动态键可显式 as TranslationKey。 */
+  t: (key: TranslationKey, params?: Record<string, string | number>) => string;
   /** 启动时从 localStorage 读取已保存的语言偏好 */
   initLocale: () => void;
 }
@@ -37,7 +38,7 @@ function persistLocale(locale: Locale): void {
  * 2. 当前语言未命中、中文字典命中 → 回退中文
  * 3. 两者都未命中 → 返回 key 本身（开发期可见，便于发现遗漏）
  */
-function translate(locale: Locale, key: string, params?: Record<string, string | number>): string {
+function translate(locale: Locale, key: TranslationKey, params?: Record<string, string | number>): string {
   const dict = translations[locale];
   const fallback = translations[DEFAULT_LOCALE];
   const raw = dict[key] ?? fallback[key] ?? key;
@@ -53,7 +54,7 @@ function translate(locale: Locale, key: string, params?: Record<string, string |
  * zustand 不会触发订阅 t 的组件更新——这是之前的 bug。
  */
 function makeT(locale: Locale) {
-  return (key: string, params?: Record<string, string | number>) => translate(locale, key, params);
+  return (key: TranslationKey, params?: Record<string, string | number>) => translate(locale, key, params);
 }
 
 export const useLocaleStore = create<LocaleState>((set, get) => ({

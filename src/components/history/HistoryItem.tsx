@@ -33,6 +33,11 @@ export function HistoryItem({ record }: { record: HistoryRecord }) {
 
   const options = record.options ?? [];
 
+  // 文章元素 ref：拖拽时直接操作 style.transform，避免每帧 setState 触发 React 重渲染
+  const articleRef = useRef<HTMLElement | null>(null);
+  // 拖拽期间的实时位移（ref），与 translateX state 保持同步仅在 drag 结束时提交
+  const liveTranslateXRef = useRef(0);
+
   // 拖拽上下文：起始坐标、起始位移、是否已进入拖拽
   const dragStart = useRef<{
     x: number;
@@ -73,7 +78,11 @@ export function HistoryItem({ record }: { record: HistoryRecord }) {
       -MAX_REVEAL,
       Math.min(dragStart.current.base + deltaX, 0),
     );
-    setTranslateX(next);
+    // 直接操作 DOM，跳过 React 重渲染；同步到 ref 供 finishDrag 读取
+    liveTranslateXRef.current = next;
+    if (articleRef.current) {
+      articleRef.current.style.transform = `translateX(${next}px)`;
+    }
   };
 
   const finishDrag = (e: React.PointerEvent<HTMLElement>) => {
@@ -89,8 +98,10 @@ export function HistoryItem({ record }: { record: HistoryRecord }) {
     } catch {
       // 释放捕获失败可忽略
     }
-    // 超过阈值保持露出，否则回弹到 0
-    setTranslateX((cur) => (cur <= -REVEAL_THRESHOLD ? -MAX_REVEAL : 0));
+    // 超过阈值保持露出，否则回弹到 0；提交到 state 让 CSS transition 接管回弹动画
+    const final = liveTranslateXRef.current <= -REVEAL_THRESHOLD ? -MAX_REVEAL : 0;
+    liveTranslateXRef.current = final;
+    setTranslateX(final);
   };
 
   const handleDelete = () => {
@@ -122,6 +133,7 @@ export function HistoryItem({ record }: { record: HistoryRecord }) {
 
       {/* 内容层（可水平滑动） */}
       <article
+        ref={articleRef}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={finishDrag}

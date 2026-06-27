@@ -54,6 +54,10 @@ export class AnimationLoop {
       this.rafId = null;
     }
     document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+    // 清理暂停态残留：若 stop 发生在页面隐藏（paused=true, savedState 已存）时，
+    // 不清空会导致下次 start 后 visibilitychange 可能把陈旧 savedState 当作当前态恢复。
+    this.paused = false;
+    this.savedState = null;
   }
 
   private handleVisibilityChange = (): void => {
@@ -76,34 +80,47 @@ export class AnimationLoop {
   private tick = (now: number): void => {
     if (!this.state || !this.callbacks) return;
 
-    // Clamp dt to prevent huge jumps (max 50ms = ~20fps min)
-    const dt = Math.min(now - this.lastTime, 50);
-    this.lastTime = now;
+    try {
+      // Clamp dt to prevent huge jumps (max 50ms = ~20fps min)
+      const dt = Math.min(now - this.lastTime, 50);
+      this.lastTime = now;
 
-    // Update physics
-    this.state = updatePhysics(this.state, dt, this.targetRotations);
+      // Update physics
+      this.state = updatePhysics(this.state, dt, this.targetRotations);
 
-    // Update DOM angle
-    this.callbacks.onAngleUpdate(this.state.angle);
+      // Update DOM angle
+      this.callbacks.onAngleUpdate(this.state.angle);
 
-    // Check sector crossing for click sound
-    if (this.optionCount > 0) {
-      const sectorIndex = WheelRenderer.getSectorAtAngle(this.state.angle, this.optionCount);
-      if (sectorIndex !== this.lastSectorIndex) {
-        const speedRatio = getSpeedRatio(this.state);
-        this.callbacks.onSectorCross(sectorIndex, speedRatio);
-        this.lastSectorIndex = sectorIndex;
+      // Check sector crossing for click sound
+      if (this.optionCount > 0) {
+        const sectorIndex = WheelRenderer.getSectorAtAngle(this.state.angle, this.optionCount);
+        if (sectorIndex !== this.lastSectorIndex) {
+          const speedRatio = getSpeedRatio(this.state);
+          this.callbacks.onSectorCross(sectorIndex, speedRatio);
+          this.lastSectorIndex = sectorIndex;
+        }
       }
-    }
 
-    // Check stop
-    if (isStopped(this.state)) {
-      this.callbacks.onStop(this.state.angle);
+      // Check stop
+      if (isStopped(this.state)) {
+        this.callbacks.onStop(this.state.angle);
+        this.stop();
+        return;
+      }
+
+      this.rafId = requestAnimationFrame(this.tick);
+    } catch (err) {
+      // 物理更新或回调抛错时：停止 RAF，调用 onStop 让上层 store 复位 phase，
+      // 否则 phase 会永久卡在 'accelerating' / 'decelerating'，UI 死锁
+      console.error('animationLoop tick failed:', err);
+      this.rafId = null;
+      try {
+        this.callbacks.onStop(this.state.angle);
+      } catch {
+        // 上层 onStop 自身出错时忽略，确保 stop() 一定执行
+      }
       this.stop();
-      return;
     }
-
-    this.rafId = requestAnimationFrame(this.tick);
   };
 }
 

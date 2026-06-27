@@ -50,8 +50,9 @@ export function useDragReorder(
 
       // Find target item via elementFromPoint
       const elem = document.elementFromPoint(e.clientX, e.clientY);
-      const target = elem?.closest('[data-option-index]') as HTMLElement | null;
-      if (target) {
+      const target = elem?.closest('[data-option-index]');
+      // 仅当匹配元素是 HTMLElement 时读取 dataset（Element 没有 dataset）
+      if (target instanceof HTMLElement) {
         const targetIndex = parseInt(target.dataset.optionIndex || '-1', 10);
         if (targetIndex >= 0 && targetIndex !== drag.toIndex) {
           drag.toIndex = targetIndex;

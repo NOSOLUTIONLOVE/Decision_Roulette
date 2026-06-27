@@ -1,8 +1,9 @@
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useLocaleStore } from '@/store/useLocaleStore';
+import type { TranslationKey } from '@/lib/i18n';
 import type { PointerStyle } from '@/types';
 
-const OPTIONS: { value: PointerStyle; label: string }[] = [
+const OPTIONS: { value: PointerStyle; label: TranslationKey }[] = [
   { value: 'triangle', label: 'pointer.triangle' },
   { value: 'circle', label: 'pointer.circle' },
   { value: 'arrow', label: 'pointer.arrow' },

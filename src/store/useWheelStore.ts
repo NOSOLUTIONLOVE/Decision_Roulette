@@ -20,7 +20,8 @@ interface WheelState {
   setPhase: (phase: SpinPhase) => void;
   setResult: (result: SpinResult | null) => void;
   setChargeRatio: (ratio: number) => void;
-  reset: () => void;
+  /** 重置转盘状态（phase/result/chargeRatio），不清空选项 */
+  resetSpin: () => void;
 }
 
 export const useWheelStore = create<WheelState>((set) => ({
@@ -63,8 +64,21 @@ export const useWheelStore = create<WheelState>((set) => ({
 
   reorderOptions: (from, to) =>
     set((s) => {
+      // 边界与同索引守卫：from/to 必须是有效索引且互不相同
+      if (
+        !Number.isInteger(from) ||
+        !Number.isInteger(to) ||
+        from === to ||
+        from < 0 ||
+        to < 0 ||
+        from >= s.options.length ||
+        to >= s.options.length
+      ) {
+        return {};
+      }
       const next = [...s.options];
       const [moved] = next.splice(from, 1);
+      if (!moved) return {};
       next.splice(to, 0, moved);
       return { options: next };
     }),
@@ -82,5 +96,5 @@ export const useWheelStore = create<WheelState>((set) => ({
   setPhase: (phase) => set({ phase }),
   setResult: (result) => set({ result }),
   setChargeRatio: (chargeRatio) => set({ chargeRatio }),
-  reset: () => set({ phase: 'idle', result: null, chargeRatio: 0 }),
+  resetSpin: () => set({ phase: 'idle', result: null, chargeRatio: 0 }),
 }));

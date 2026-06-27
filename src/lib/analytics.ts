@@ -18,6 +18,7 @@ import type { Metric } from 'web-vitals';
 const ANALYTICS_DOMAIN = import.meta.env.VITE_ANALYTICS_DOMAIN;
 
 let initialized = false;
+let consentGranted = false;
 
 /** Plausible 全局函数的可选参数（由 script.js 注入到 window）。 */
 interface PlausibleOptions {
@@ -39,17 +40,25 @@ export function isAnalyticsEnabled(): boolean {
   return Boolean(ANALYTICS_DOMAIN);
 }
 
+/** 设置用户同意状态。仅当 consent=true 时才会注入脚本与上报。 */
+export function setAnalyticsConsent(consent: boolean): void {
+  consentGranted = consent;
+  if (consent) {
+    initAnalytics();
+  }
+}
+
 /**
  * 初始化分析。
  *
  * 幂等：重复调用不会重复注入脚本。
- * 未配置 domain 时为 no-op。
+ * 未配置 domain 或未获用户同意时为 no-op。
  */
 export function initAnalytics(): void {
   if (initialized) return;
-  initialized = true;
-
   if (!ANALYTICS_DOMAIN) return;
+  if (!consentGranted) return;
+  initialized = true;
 
   // 避免重复注入
   if (document.querySelector('script[data-plausible]')) return;
@@ -59,6 +68,7 @@ export function initAnalytics(): void {
   script.async = true;
   script.setAttribute('data-domain', ANALYTICS_DOMAIN);
   script.src = 'https://plausible.io/js/script.js';
+  script.crossOrigin = 'anonymous';
   script.setAttribute('data-plausible', '');
   document.head.appendChild(script);
 }
@@ -66,22 +76,22 @@ export function initAnalytics(): void {
 /**
  * 记录页面访问。
  *
- * 未配置 domain 时为 no-op。Plausible 的 script.js 会自动记录首次访问；
+ * 未配置 domain 或未获同意时为 no-op。Plausible 的 script.js 会自动记录首次访问；
  * SPA 路由切换需手动调用此函数以触发后续 pageview。
  */
 export function trackPageview(url?: string): void {
-  if (!ANALYTICS_DOMAIN) return;
+  if (!ANALYTICS_DOMAIN || !consentGranted) return;
   window.plausible?.('pageview', url ? { url } : undefined);
 }
 
 /**
- * 自定义事件。未配置 domain 时为 no-op。
+ * 自定义事件。未配置 domain 或未获同意时为 no-op。
  */
 export function trackEvent(
   name: string,
   props?: Record<string, string | number | boolean>,
 ): void {
-  if (!ANALYTICS_DOMAIN) return;
+  if (!ANALYTICS_DOMAIN || !consentGranted) return;
   window.plausible?.(name, props ? { props } : undefined);
 }
 

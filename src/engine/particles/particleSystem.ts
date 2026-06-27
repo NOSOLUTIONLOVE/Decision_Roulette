@@ -33,21 +33,41 @@ export function createBurst(
   return particles;
 }
 
-/** Update particles by one frame */
+/**
+ * Update particles by one frame.
+ *
+ * 原地更新 + 原地压缩：避免每帧 .map 创建新对象、.filter 创建新数组造成的 GC 压力。
+ * 返回值与入参 particles 同引用，长度可能因死亡粒子被移除而缩短。
+ */
 export function updateParticles(particles: Particle[], dt: number): Particle[] {
   const dtScale = dt / 16.67; // normalize to 60fps
   const drag = Math.pow(0.99, dtScale); // frame-rate independent air resistance
 
-  return particles
-    .map((p) => ({
-      ...p,
-      x: p.x + p.vx * dtScale,
-      y: p.y + p.vy * dtScale,
-      vy: p.vy * drag + GRAVITY * dtScale,
-      vx: p.vx * drag,
-      life: p.life - dt,
-    }))
-    .filter((p) => p.life > 0);
+  // 原地压缩：把存活粒子前移，末尾截断
+  let writeIdx = 0;
+  for (let i = 0; i < particles.length; i++) {
+    const p = particles[i];
+    if (!p) continue;
+    // 更新物理量（原地）
+    p.x = p.x + p.vx * dtScale;
+    p.y = p.y + p.vy * dtScale;
+    p.vy = p.vy * drag + GRAVITY * dtScale;
+    p.vx = p.vx * drag;
+    p.life = p.life - dt;
+
+    if (p.life > 0) {
+      if (writeIdx !== i) {
+        particles[writeIdx] = p;
+        particles[i] = undefined as unknown as Particle;
+      }
+      writeIdx++;
+    } else {
+      particles[i] = undefined as unknown as Particle;
+    }
+  }
+  // 截断末尾
+  particles.length = writeIdx;
+  return particles;
 }
 
 /** Render particles to a canvas context */

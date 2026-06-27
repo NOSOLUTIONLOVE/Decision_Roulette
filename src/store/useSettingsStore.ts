@@ -29,18 +29,29 @@ function loadMuted(): boolean {
   return false;
 }
 
+function isValidTextSize(v: unknown): v is TextSize {
+  return v === 'small' || v === 'medium' || v === 'large';
+}
+function isValidPointerStyle(v: unknown): v is PointerStyle {
+  return v === 'triangle' || v === 'circle' || v === 'arrow';
+}
+
 function loadSettings(): Settings {
   const muted = loadMuted();
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      const parsed = JSON.parse(raw) as Partial<Settings>;
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      const volume = typeof parsed.volume === 'number' && Number.isFinite(parsed.volume)
+        ? Math.max(0, Math.min(1, parsed.volume))
+        : 0.6;
       return {
-        themeId: parsed.themeId ?? DEFAULT_THEME.id,
-        textSize: parsed.textSize ?? 'medium',
-        pointerStyle: parsed.pointerStyle ?? 'triangle',
+        themeId: typeof parsed.themeId === 'string' ? parsed.themeId : DEFAULT_THEME.id,
+        textSize: isValidTextSize(parsed.textSize) ? parsed.textSize : 'medium',
+        pointerStyle: isValidPointerStyle(parsed.pointerStyle) ? parsed.pointerStyle : 'triangle',
         muted,
-        volume: parsed.volume ?? 0.6,
+        volume,
+        analyticsConsent: parsed.analyticsConsent === true,
       };
     }
   } catch {
@@ -52,6 +63,7 @@ function loadSettings(): Settings {
     pointerStyle: 'triangle',
     muted,
     volume: 0.6,
+    analyticsConsent: false,
   };
 }
 
@@ -69,6 +81,7 @@ interface SettingsState extends Settings {
   setPointerStyle: (style: PointerStyle) => void;
   setMuted: (muted: boolean) => void;
   setVolume: (volume: number) => void;
+  setAnalyticsConsent: (consent: boolean) => void;
   initTheme: () => void;
 }
 
@@ -113,6 +126,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     const next = { ...get(), volume };
     saveSettings(next);
     set({ volume });
+  },
+
+  setAnalyticsConsent: (analyticsConsent) => {
+    const next = { ...get(), analyticsConsent };
+    saveSettings(next);
+    set({ analyticsConsent });
   },
 
   initTheme: () => {

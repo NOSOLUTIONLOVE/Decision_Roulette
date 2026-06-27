@@ -2,9 +2,11 @@ import { Check } from 'lucide-react';
 import { THEMES } from '@/lib/themes';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useLocaleStore } from '@/store/useLocaleStore';
+import type { TranslationKey } from '@/lib/i18n';
 
-/** theme.id → i18n key 映射，用于读取主题本地化名称 */
-const THEME_NAME_KEY: Record<string, string> = {
+/** theme.id → i18n key 映射，用于读取主题本地化名称。
+ *  Partial 反映「可能未命中」的真实语义，调用方需提供 fallback。 */
+const THEME_NAME_KEY: Partial<Record<string, TranslationKey>> = {
   editorial: 'theme.editorial',
   'neon-night': 'theme.neonNight',
   morandi: 'theme.morandi',

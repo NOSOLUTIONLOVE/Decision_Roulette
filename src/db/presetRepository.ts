@@ -1,43 +1,12 @@
-import { db, isAvailable, type DecisionDB } from './dexie';
+import type { DecisionDB } from './dexie';
 import type { Preset } from '@/types';
+import { createLSFallback } from './localStorageFallback';
 
 const LS_KEY = 'dr-presets';
 /** LocalStorage fallback cap (mirrors the in-DB limit). */
 const LS_LIMIT = 20;
 
-/** Flips to true after the first Dexie failure to skip straight to LS. */
-let useFallback = !isAvailable;
-
-function lsRead(): Preset[] {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    return raw ? (JSON.parse(raw) as Preset[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function lsWrite(records: Preset[]): void {
-  try {
-    localStorage.setItem(LS_KEY, JSON.stringify(records));
-  } catch {
-    // ignore quota / serialization errors
-  }
-}
-
-/** Run a Dexie op, falling back to a LocalStorage op on any failure. */
-async function withFallback<T>(
-  dexie: (db: DecisionDB) => Promise<T>,
-  ls: () => T | Promise<T>,
-): Promise<T> {
-  if (useFallback || !db) return ls();
-  try {
-    return await dexie(db);
-  } catch {
-    useFallback = true;
-    return ls();
-  }
-}
+const ls = createLSFallback<Preset>({ key: LS_KEY });
 
 /**
  * Add a preset. `createdAt` is stamped automatically. Only the newest
@@ -48,8 +17,8 @@ export async function add(
   limit = 20,
 ): Promise<void> {
   const record: Preset = { ...preset, createdAt: Date.now() };
-  await withFallback(
-    async (db) => {
+  await ls.withFallback(
+    async (db: DecisionDB) => {
       await db.presets.add(record);
       const total = await db.presets.count();
       if (total > limit) {
@@ -60,26 +29,26 @@ export async function add(
       }
     },
     () => {
-      const all = lsRead();
+      const all = ls.read();
       all.push({ ...record, id: Date.now() });
-      lsWrite(all.slice(-LS_LIMIT));
+      ls.write(all.slice(-LS_LIMIT));
     },
   );
 }
 
 /** Return all presets, newest first. */
 export async function getAll(): Promise<Preset[]> {
-  return withFallback(
-    async (db) => db.presets.toCollection().reverse().toArray(),
-    () => [...lsRead()].sort((a, b) => b.createdAt - a.createdAt),
+  return ls.withFallback(
+    async (db: DecisionDB) => db.presets.toCollection().reverse().toArray(),
+    () => [...ls.read()].sort((a, b) => b.createdAt - a.createdAt),
   );
 }
 
 /** Delete a preset by its primary key. */
 export async function remove(id: number): Promise<void> {
-  await withFallback(
-    (db) => db.presets.delete(id),
-    () => lsWrite(lsRead().filter((p) => p.id !== id)),
+  await ls.withFallback(
+    (db: DecisionDB) => db.presets.delete(id),
+    () => { ls.write(ls.read().filter((p) => p.id !== id)); },
   );
 }
 
@@ -88,8 +57,8 @@ export async function update(
   id: number,
   data: Partial<Omit<Preset, 'id'>>,
 ): Promise<void> {
-  await withFallback(
-    (db) => db.presets.update(id, data).then(() => undefined),
-    () => lsWrite(lsRead().map((p) => (p.id === id ? { ...p, ...data } : p))),
+  await ls.withFallback(
+    (db: DecisionDB) => db.presets.update(id, data).then(() => undefined),
+    () => { ls.write(ls.read().map((p) => (p.id === id ? { ...p, ...data } : p))); },
   );
 }
